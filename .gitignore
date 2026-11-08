@@ -1,0 +1,25 @@
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+
+# Playwright 결과물
+test-results/
+playwright-report/
+screenshots/
+next-env.d.ts
+
+.env
+.env.*
+!.env.example
+
+.DS_Store
+*.log
+
+# Python (STT 워커)
+__pycache__/
+.venv/
+
+# 로컬 전용 (커밋하지 않음)
+claude/
+CLAUDE.md

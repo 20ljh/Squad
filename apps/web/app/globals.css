@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 팀원 색상처럼 데이터로 들어오는 값은 인라인 style로, 나머지는 tailwind 토큰으로 처리 */
+:root {
+  --ink: #372f52;
+  --on-panel: #ffffff;
+  --on-panel-soft: rgba(255, 255, 255, 0.82);
+  --on-panel-line: rgba(255, 255, 255, 0.35);
+  --card-glass: rgba(255, 255, 255, 0.92);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply m-0 bg-page font-body text-ink antialiased;
+  min-height: 100vh;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid #8b7cf6;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .animate-fade-up,
+  .animate-fade-in {
+    animation: none !important;
+  }
+}

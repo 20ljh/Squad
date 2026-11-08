@@ -1,0 +1,59 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+
+// 초대 코드는 영문·숫자·하이픈만 (예: SQD-7K4P). 실제 존재 여부는 참여 요청 화면(/join/[code])에서 확인
+const CODE_PATTERN = /^[A-Z0-9-]{4,20}$/;
+
+export function InviteCodeForm() {
+  const router = useRouter();
+  const [code, setCode] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const normalized = code.trim().toUpperCase();
+    if (!normalized) {
+      setError("초대 코드를 입력해 주세요.");
+      return;
+    }
+    if (!CODE_PATTERN.test(normalized)) {
+      setError("코드에는 영문·숫자·하이픈(-)만 들어가요. 팀장에게 받은 코드를 다시 확인해 주세요.");
+      return;
+    }
+    setError(null);
+    router.push(`/join/${encodeURIComponent(normalized)}`);
+  }
+
+  return (
+    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-2">
+      <div className="flex gap-2">
+        <input
+          id="invite-code"
+          name="code"
+          type="text"
+          inputMode="text"
+          autoComplete="off"
+          autoCapitalize="characters"
+          spellCheck={false}
+          placeholder="예: SQD-7K4P"
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          aria-describedby="invite-code-error"
+          aria-invalid={error ? true : undefined}
+          className="h-12 min-w-0 flex-1 rounded-sm border border-line bg-white px-3.5 text-[15px] text-ink placeholder:text-ink-soft sm:h-[52px] sm:px-4 sm:text-base"
+        />
+        <button
+          type="submit"
+          className="h-12 shrink-0 rounded-sm bg-accent-soft px-[18px] text-[15px] font-bold text-accent-deep transition hover:bg-line sm:h-[52px] sm:px-[22px]"
+        >
+          참여
+        </button>
+      </div>
+      <p id="invite-code-error" aria-live="polite" className="m-0 text-[13px] font-medium text-warn empty:hidden">
+        {error}
+      </p>
+    </form>
+  );
+}
