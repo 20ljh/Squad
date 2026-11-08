@@ -42,11 +42,11 @@ export function InviteCodeForm() {
           onChange={(e) => setCode(e.target.value)}
           aria-describedby="invite-code-error"
           aria-invalid={error ? true : undefined}
-          className="h-12 min-w-0 flex-1 rounded-sm border border-line bg-white px-3.5 text-[15px] text-ink placeholder:text-ink-soft sm:h-[52px] sm:px-4 sm:text-base"
+          className="h-12 min-w-0 flex-1 rounded-sm border border-ink-soft/50 bg-white px-3.5 text-base text-ink transition-colors duration-150 placeholder:text-ink-soft hover:border-ink-soft sm:h-[52px] sm:px-4"
         />
         <button
           type="submit"
-          className="h-12 shrink-0 rounded-sm bg-accent-soft px-[18px] text-[15px] font-bold text-accent-deep transition hover:bg-line sm:h-[52px] sm:px-[22px]"
+          className="h-12 shrink-0 rounded-sm bg-accent-soft px-[18px] text-[15px] font-bold text-accent-deep transition-colors duration-150 hover:bg-line sm:h-[52px] sm:px-[22px]"
         >
           참여
         </button>

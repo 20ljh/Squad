@@ -23,7 +23,7 @@ export function MyProjectList({ items }: { items: MyProject[] }) {
               <li key={p.id}>
                 <Link
                   href={p.href}
-                  className="flex items-center justify-between gap-3 rounded-sm border border-line bg-white px-4 py-3.5 text-ink no-underline transition hover:border-accent sm:px-[18px] sm:py-4"
+                  className="flex items-center justify-between gap-3 rounded-sm border border-line bg-white px-4 py-3.5 text-ink no-underline transition-colors duration-150 hover:border-accent sm:px-[18px] sm:py-4"
                 >
                   <span className="flex min-w-0 flex-col gap-0.5">
                     <span className="truncate text-[15px] font-bold sm:text-base">{p.name}</span>

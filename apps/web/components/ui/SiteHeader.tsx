@@ -34,8 +34,8 @@ function NavIcon({ kind }: { kind: "grid" | "back" }) {
 
 export function SiteHeader({ context, nav }: Props) {
   return (
-    <header className="sticky top-0 z-20 border-b border-line bg-white/80 backdrop-blur-md">
-      <div className="mx-auto flex max-w-page items-center gap-2.5 px-4 py-3.5 sm:px-8">
+    <header className="sticky top-0 z-20 border-b border-line bg-white">
+      <div className="mx-auto flex max-w-page items-center gap-2.5 px-4 py-2.5 sm:px-8">
         <Link href="/" className="flex items-center gap-2.5 text-ink no-underline">
           <LogoMark />
           <span className="font-display text-[15px] font-bold tracking-wide">{BRAND.name}</span>
@@ -48,7 +48,7 @@ export function SiteHeader({ context, nav }: Props) {
         ) : null}
         <Link
           href={nav.href}
-          className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1.5 text-[12.5px] font-semibold text-ink-soft transition hover:text-accent-strong"
+          className="ml-auto inline-flex min-h-11 items-center gap-1.5 rounded-full border border-line bg-white px-4 text-[13px] font-semibold text-ink-soft transition-colors duration-150 hover:border-accent hover:text-accent-strong"
         >
           {nav.icon ? <NavIcon kind={nav.icon} /> : null}
           {nav.shortLabel ? (
