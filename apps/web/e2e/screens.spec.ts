@@ -11,6 +11,7 @@ import { expect, test } from "@playwright/test";
 
 const pages = [
   { name: "home", path: "/" },
+  { name: "projects-new", path: "/projects/new" },
   { name: "meeting", path: "/meetings/sample" },
   { name: "dashboard", path: "/dashboard" },
 ] as const;
