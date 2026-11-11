@@ -1,5 +1,6 @@
 import type { Dashboard, Meeting, Member } from "./types";
 import { SAMPLE_PROJECT_ID, meetingPath } from "./paths";
+import { sttTestMeeting } from "./sample-stt-meeting";
 
 // 목업과 동일한 예시 데이터. 실제 연결 시 DB 조회 결과로 교체합니다.
 
@@ -111,6 +112,7 @@ export const sampleDashboard: Dashboard = {
 /** 샘플 데이터 조회 — 실제로는 DB/API 호출로 교체. 없는 프로젝트·회의는 null */
 export function getMeeting(projectId: string, meetingId: string): Meeting | null {
   if (projectId !== SAMPLE_PROJECT_ID) return null;
+  if (meetingId === sttTestMeeting.id) return sttTestMeeting; // 받아쓰기·요약 시험 결과 (주소로만 들어감)
   return meetingId === sampleMeeting.id ? sampleMeeting : null;
 }
 

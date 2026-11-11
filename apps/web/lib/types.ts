@@ -38,8 +38,10 @@ export type AgendaItem = {
 
 export type ScheduleItem = {
   id: string;
-  /** ISO 날짜 (YYYY-MM-DD) */
-  date: string;
+  /** ISO 날짜 (YYYY-MM-DD). "주말까지"처럼 날짜를 하나로 정할 수 없으면 null */
+  date: string | null;
+  /** 원문의 마감 표현("주말", "일요일 자정"). 날짜가 없을 때 화면에 그대로 보여 줌 */
+  dueText?: string;
   label: string;
   ownerLabel: string;
 };
