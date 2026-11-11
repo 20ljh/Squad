@@ -5,10 +5,11 @@
 /* 팀원 색상처럼 데이터로 들어오는 값은 인라인 style로, 나머지는 tailwind 토큰으로 처리 */
 :root {
   --ink: #372f52;
-  --on-panel: #ffffff;
-  --on-panel-soft: rgba(255, 255, 255, 0.82);
-  --on-panel-line: rgba(255, 255, 255, 0.35);
-  --card-glass: rgba(255, 255, 255, 0.92);
+  --ink-soft: #726a94;
+  --line: #ece3fa;
+  --accent: #8b7cf6;
+  --accent-strong: #6c55e6;
+  --accent-soft: #efe9fe;
 }
 
 html {

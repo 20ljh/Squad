@@ -11,10 +11,13 @@
 cd apps/web
 npm install
 npm run dev
-# http://localhost:3000  메인 (프로젝트 만들기 · 초대 코드로 참여 · 이 기기의 내 프로젝트)
+# http://localhost:3000                  메인 (프로젝트 만들기 · 초대 코드로 참여 · 내 프로젝트)
+# http://localhost:3000/projects/new     프로젝트 만들기
+# http://localhost:3000/meetings/sample  회의 결과 (예시 데이터)
+# http://localhost:3000/dashboard        팀 대시보드 (예시 데이터)
 ```
 
-화면(UI)을 하나씩 만들어 가는 중입니다. 지금은 메인 화면만 있고, 백엔드(DB, STT, 요약, Notion 내보내기)는 아직 없습니다.
+화면(UI)을 하나씩 만들어 가는 중입니다. 회의 결과·대시보드는 예시 데이터로 동작하고, 백엔드(로그인, DB, STT, 요약, Notion 내보내기)는 아직 없습니다.
 
 ## 검사
 
