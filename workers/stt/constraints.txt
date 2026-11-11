@@ -1,0 +1,3 @@
+# GPU(CUDA 12.8)용 torch를 고정. 다른 패키지가 CPU 전용 최신 torch로 바꾸지 못하게 함
+torch==2.11.0+cu128
+torchaudio==2.11.0+cu128

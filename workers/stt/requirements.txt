@@ -1,0 +1,15 @@
+# STT 워커 (받아쓰기 + 화자 분리). Python 3.13, NVIDIA GPU(CUDA 12.8) 기준
+#
+# 설치 (squad 폴더에서):
+#   py -3.13 -m venv workers/stt/.venv
+#   workers/stt/.venv/Scripts/python -m pip install --index-url https://download.pytorch.org/whl/cu128 --extra-index-url https://pypi.org/simple -c workers/stt/constraints.txt -r workers/stt/requirements.txt
+#
+# 필요한 것: ffmpeg(PATH), apps/web/.env 의 HF_TOKEN(+ pyannote/speaker-diarization-community-1 사용 조건 동의)
+torch
+torchaudio
+faster-whisper>=1.2,<2
+pyannote.audio>=4.0,<5
+python-dotenv
+numpy
+# 채점(eval_poc.py)용: 정답 대본과 글자 단위 비교
+rapidfuzz
