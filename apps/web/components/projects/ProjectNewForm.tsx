@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { RecoveryCodeDialog } from "./RecoveryCodeDialog";
 
 // 기본 프로젝트 설정 폼 (/projects/new)
 // 지금은 화면만 있는 예시: 입력 검사까지 하고, 실제 생성(POST /api/projects)은 DB 단계에서 연결.
@@ -31,13 +32,14 @@ function XIcon() {
 // 보안 안내: 모바일에서는 폼 안(만들기 버튼 위), PC에서는 오른쪽 안내 영역에 보여줌
 export function SafetyNote({ className = "" }: { className?: string }) {
   return (
-    <div className={`flex items-start gap-3 rounded-sm border border-line bg-surface-alt p-4 ${className}`}>
+    <div className={`flex items-start gap-3 rounded-sm border border-ink-soft/30 bg-surface-alt p-4 ${className}`}>
       <span className="mt-0.5 shrink-0 text-accent-strong">
         <LockIcon />
       </span>
       <p className="m-0 text-sm leading-[1.6] text-ink">
-        <strong className="font-semibold">링크가 퍼져도 안전해요.</strong> 팀원은 초대 링크로 참여를 요청하고, 팀장인 내가 확인 코드를 보고 승인해야
-        들어올 수 있어요.
+        <strong className="block font-semibold">링크가 퍼져도 안전해요.</strong>
+        팀원은 초대 링크로 들어와 확인 메시지를 보내고, 팀장인 내가 메시지를 보고
+        수락해야 들어올 수 있어요.
       </p>
     </div>
   );
@@ -79,6 +81,7 @@ export function ProjectNewForm() {
   const [members, setMembers] = useState<string[]>([]);
   const [errors, setErrors] = useState<Errors>({});
   const [notice, setNotice] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   function addMember() {
     const n = memberInput.trim();
@@ -117,12 +120,13 @@ export function ProjectNewForm() {
       setNotice(null);
       return;
     }
-    // TODO: DB 단계에서 POST /api/projects 로 교체하고, 생성 완료·초대 공유 화면으로 이동
-    setNotice("입력은 모두 맞아요. 지금은 예시 화면이라 실제로 만들어지지는 않아요.");
+    // 입력이 맞으면 복구 코드 팝업부터 (주의 → 코드 → 확인). 실제 생성은 팝업의 코드 단계에서 일어남
+    setNotice(null);
+    setDialogOpen(true);
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6 rounded-lg border border-line bg-white p-5 md:p-8">
+    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6 rounded-lg border border-ink-soft/30 bg-white p-5 md:p-8">
       <div className="grid gap-5 md:grid-cols-2">
         <div className="flex flex-col gap-2">
           <Label htmlFor="p-name" required>
@@ -159,26 +163,29 @@ export function ProjectNewForm() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 md:max-w-[360px]">
-        <Label htmlFor="p-leader" hint="팀장" required>
-          내 이름
-        </Label>
-        <input
-          id="p-leader"
-          type="text"
-          autoComplete="off"
-          maxLength={MAX_NAME}
-          placeholder="예: 하은"
-          value={leader}
-          onChange={(e) => setLeader(e.target.value)}
-          aria-invalid={errors.leader ? true : undefined}
-          aria-describedby="p-leader-error"
-          className={inputClass}
-        />
-        <FieldError id="p-leader-error" message={errors.leader} />
+      {/* PC에서 위의 "프로젝트 이름" 칸과 같은 두 칸 격자를 써서 칸 길이를 맞춤 */}
+      <div className="grid gap-5 md:grid-cols-2">
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="p-leader" hint="팀장" required>
+            내 이름
+          </Label>
+          <input
+            id="p-leader"
+            type="text"
+            autoComplete="off"
+            maxLength={MAX_NAME}
+            placeholder="예: 하은"
+            value={leader}
+            onChange={(e) => setLeader(e.target.value)}
+            aria-invalid={errors.leader ? true : undefined}
+            aria-describedby="p-leader-error"
+            className={inputClass}
+          />
+          <FieldError id="p-leader-error" message={errors.leader} />
+        </div>
       </div>
 
-      <div className="flex flex-col gap-3 border-t border-line pt-6">
+      <div className="flex flex-col gap-3 border-t border-ink-soft/30 pt-6">
         <Label htmlFor="p-member" hint="선택">
           팀원 이름
         </Label>
@@ -199,7 +206,8 @@ export function ProjectNewForm() {
             ))}
           </ul>
         ) : null}
-        <div className="flex gap-2 md:max-w-[480px]">
+        {/* PC: 입력칸은 왼쪽 칸(프로젝트 이름과 같은 길이), "추가" 버튼은 오른쪽 칸 시작선(과목·팀 이름 칸과 같은 위치) */}
+        <div className="flex gap-2 md:grid md:grid-cols-2 md:gap-5">
           <input
             id="p-member"
             type="text"
@@ -222,7 +230,7 @@ export function ProjectNewForm() {
           <button
             type="button"
             onClick={addMember}
-            className="h-12 shrink-0 rounded-sm bg-accent-soft px-5 text-[15px] font-semibold text-accent-deep transition-colors duration-150 hover:bg-line"
+            className="h-12 shrink-0 rounded-sm bg-accent-soft px-5 text-[15px] font-semibold text-accent-deep transition-colors duration-150 hover:bg-line md:justify-self-start"
           >
             추가
           </button>
@@ -235,23 +243,36 @@ export function ProjectNewForm() {
 
       <SafetyNote className="md:hidden" />
 
-      <div className="flex flex-col gap-3 md:flex-row-reverse md:items-center md:justify-start">
-        <button
-          type="submit"
-          className="flex h-12 items-center justify-center rounded-sm bg-accent-strong px-7 text-base font-bold text-white transition-colors duration-150 hover:bg-accent-deep"
-        >
-          프로젝트 만들기
-        </button>
-        <Link
-          href="/"
-          className="flex h-12 items-center justify-center rounded-sm border border-line bg-white px-6 text-[15px] font-semibold text-ink no-underline transition-colors duration-150 hover:border-ink-soft"
-        >
-          취소
-        </Link>
-        <p aria-live="polite" className="m-0 text-sm text-accent-deep empty:hidden md:mr-auto">
+      {/* 안내 문구는 버튼 줄과 분리해서, 문구 길이와 상관없이 버튼 크기가 그대로 유지되게 함 */}
+      <div className="flex flex-col gap-3">
+        <p aria-live="polite" className="m-0 rounded-sm bg-accent-soft px-4 py-3 text-sm text-accent-deep empty:hidden">
           {notice}
         </p>
+        <div className="flex flex-col gap-3 md:flex-row-reverse md:items-center">
+          <button
+            type="submit"
+            className="flex h-12 shrink-0 items-center justify-center whitespace-nowrap rounded-sm bg-accent-strong px-7 text-base font-bold text-white transition-colors duration-150 hover:bg-accent-deep"
+          >
+            프로젝트 만들기
+          </button>
+          <Link
+            href="/"
+            className="flex h-12 shrink-0 items-center justify-center whitespace-nowrap rounded-sm border border-ink-soft/30 bg-white px-6 text-[15px] font-semibold text-ink no-underline transition-colors duration-150 hover:border-ink-soft"
+          >
+            취소
+          </Link>
+        </div>
       </div>
+
+      <RecoveryCodeDialog
+        open={dialogOpen}
+        onCancel={() => setDialogOpen(false)}
+        onDone={() => {
+          setDialogOpen(false);
+          // TODO: 생성 완료·초대 공유 화면으로 이동
+          setNotice("프로젝트를 만들었어요(예시). 다음 단계에서 초대 공유 화면으로 이어져요.");
+        }}
+      />
     </form>
   );
 }
