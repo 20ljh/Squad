@@ -5,8 +5,8 @@ import { LogoMark } from "./Logo";
 type Props = {
   /** 로고 오른쪽 라벨 (메인 화면처럼 없으면 생략) */
   context?: string;
-  /** 우측 이동 버튼 */
-  nav: {
+  /** 우측 이동 버튼 (없으면 생략) */
+  nav?: {
     href: string;
     label: string;
     /** 좁은 화면(모바일)에서 대신 보여줄 짧은 라벨 */
@@ -46,20 +46,22 @@ export function SiteHeader({ context, nav }: Props) {
             <span className="hidden font-display text-[11px] uppercase tracking-[.08em] text-ink-soft sm:block">{context}</span>
           </>
         ) : null}
-        <Link
-          href={nav.href}
-          className="ml-auto inline-flex min-h-11 items-center gap-1.5 rounded-full border border-line bg-white px-4 text-[13px] font-semibold text-ink-soft transition-colors duration-150 hover:border-accent hover:text-accent-strong"
-        >
-          {nav.icon ? <NavIcon kind={nav.icon} /> : null}
-          {nav.shortLabel ? (
-            <>
-              <span className="sm:hidden">{nav.shortLabel}</span>
-              <span className="hidden sm:inline">{nav.label}</span>
-            </>
-          ) : (
-            nav.label
-          )}
-        </Link>
+        {nav ? (
+          <Link
+            href={nav.href}
+            className="ml-auto inline-flex min-h-11 items-center gap-1.5 rounded-full border border-line bg-white px-4 text-[13px] font-semibold text-ink-soft transition-colors duration-150 hover:border-accent hover:text-accent-strong"
+          >
+            {nav.icon ? <NavIcon kind={nav.icon} /> : null}
+            {nav.shortLabel ? (
+              <>
+                <span className="sm:hidden">{nav.shortLabel}</span>
+                <span className="hidden sm:inline">{nav.label}</span>
+              </>
+            ) : (
+              nav.label
+            )}
+          </Link>
+        ) : null}
       </div>
     </header>
   );

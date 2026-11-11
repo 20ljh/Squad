@@ -8,14 +8,15 @@ import { MindMap } from "@/components/meeting/MindMap";
 import { ScheduleList } from "@/components/meeting/ScheduleList";
 import { ExportBar } from "@/components/meeting/ExportBar";
 import { getMeeting } from "@/lib/sample-data";
+import { projectPath } from "@/lib/paths";
 import { formatFullDate, memberMap } from "@/lib/format";
 import { pageTitle } from "@/lib/brand";
 
 // Next 14: params는 일반 객체입니다(Next 15부터는 Promise).
-type Params = { params: { id: string } };
+type Params = { params: { id: string; mid: string } };
 
 export function generateMetadata({ params }: Params): Metadata {
-  const meeting = getMeeting(params.id);
+  const meeting = getMeeting(params.id, params.mid);
   return { title: pageTitle(meeting ? meeting.title : "회의를 찾을 수 없어요") };
 }
 
@@ -29,7 +30,7 @@ function MetaItem({ label, children }: { label: string; children: React.ReactNod
 }
 
 export default function MeetingResultPage({ params }: Params) {
-  const meeting = getMeeting(params.id);
+  const meeting = getMeeting(params.id, params.mid);
   if (!meeting) notFound();
 
   const byId = memberMap(meeting.members);
@@ -39,7 +40,7 @@ export default function MeetingResultPage({ params }: Params) {
 
   return (
     <div className="min-h-screen break-keep bg-surface-alt [overflow-wrap:anywhere]">
-      <SiteHeader context="회의 결과 기록" nav={{ href: "/dashboard", label: "팀 대시보드", icon: "grid" }} />
+      <SiteHeader context="회의 결과 기록" nav={{ href: projectPath(params.id), label: "팀 대시보드", icon: "back" }} />
 
       <main className="mx-auto flex w-full max-w-page flex-col gap-12 px-5 pb-24 pt-10 sm:px-8">
         <section className="flex animate-fade-up flex-col gap-6">

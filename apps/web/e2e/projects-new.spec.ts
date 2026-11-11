@@ -47,6 +47,10 @@ test.describe("프로젝트 만들기 · 기본 설정", () => {
     await done.click();
     await expect(dialog).toBeHidden();
     await expect(page.getByText(/프로젝트를 만들었어요/)).toBeVisible();
+
+    // 만든 뒤에는 프로젝트 메인으로 이어짐 (지금은 샘플 프로젝트)
+    await page.getByRole("link", { name: "샘플 프로젝트 메인 보기" }).click();
+    await expect(page).toHaveURL("/p/sample");
   });
 
   test("주의 단계에서는 돌아가기로 취소할 수 있다", async ({ page }) => {

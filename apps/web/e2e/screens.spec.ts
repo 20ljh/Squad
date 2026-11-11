@@ -12,8 +12,8 @@ import { expect, test } from "@playwright/test";
 const pages = [
   { name: "home", path: "/" },
   { name: "projects-new", path: "/projects/new" },
-  { name: "meeting", path: "/meetings/sample" },
-  { name: "dashboard", path: "/dashboard" },
+  { name: "meeting", path: "/p/sample/meetings/m3" },
+  { name: "dashboard", path: "/p/sample" },
 ] as const;
 
 const viewports = [

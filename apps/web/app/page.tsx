@@ -4,11 +4,12 @@ import { InviteCodeForm } from "@/components/home/InviteCodeForm";
 import { MyProjectList } from "@/components/home/MyProjectList";
 import { BRAND } from "@/lib/brand";
 import { getMyProjects } from "@/lib/my-projects";
+import { SAMPLE_PROJECT_ID, projectPath } from "@/lib/paths";
 
 // 메인(/) — 프로젝트 만들기, 초대 코드로 참여, 이 기기의 내 프로젝트
-// 샘플 프로젝트는 아직 /dashboard 예시 화면으로 연결 (프로젝트 메인 /p/[id]를 만들면 옮김)
+// 샘플 프로젝트는 예시 데이터로 동작하는 프로젝트 메인(/p/sample)으로 연결
 // 표현 원칙: 그라데이션·빛나는 그림자 없이 단색 면과 얇은 선으로 정리 (Flat 방향)
-const SAMPLE_HREF = "/dashboard";
+const SAMPLE_HREF = projectPath(SAMPLE_PROJECT_ID);
 
 type IconName = "list" | "flow" | "export";
 

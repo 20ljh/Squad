@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/ui/SiteHeader";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { KpiTile } from "@/components/dashboard/KpiTile";
@@ -6,20 +7,37 @@ import { ParticipationCard } from "@/components/dashboard/ParticipationCard";
 import { HighlightList } from "@/components/dashboard/HighlightList";
 import { MeetingHistory } from "@/components/dashboard/MeetingHistory";
 import { MeetingSearch } from "@/components/dashboard/MeetingSearch";
-import { getDashboard } from "@/lib/sample-data";
+import { getDashboard, getMeeting } from "@/lib/sample-data";
+import { meetingPath } from "@/lib/paths";
 import { memberMap } from "@/lib/format";
 import { pageTitle } from "@/lib/brand";
 
-export const metadata: Metadata = { title: pageTitle("팀 대시보드") };
+// Next 14: params는 일반 객체입니다(Next 15부터는 Promise).
+type Params = { params: { id: string } };
 
-export default function DashboardPage() {
-  const data = getDashboard();
+export function generateMetadata({ params }: Params): Metadata {
+  return { title: pageTitle(getDashboard(params.id) ? "팀 대시보드" : "프로젝트를 찾을 수 없어요") };
+}
+
+// 프로젝트 메인(/p/[id]) — 지금은 팀 대시보드가 곧 프로젝트 메인
+export default function ProjectMainPage({ params }: Params) {
+  const data = getDashboard(params.id);
+  if (!data) notFound();
+
   const byId = memberMap(data.members);
-  const latest = data.rounds[data.rounds.length - 1];
+  // 결과 페이지가 있는 회의만 링크로 연결 (예시 데이터는 3차 회의만 결과가 있음)
+  const meetingHrefs: Record<string, string> = {};
+  for (const r of data.rounds) {
+    if (getMeeting(params.id, r.id)) meetingHrefs[r.id] = meetingPath(params.id, r.id);
+  }
+  const latest = [...data.rounds].reverse().find((r) => meetingHrefs[r.id]);
 
   return (
     <div className="min-h-screen break-keep bg-surface-alt [overflow-wrap:anywhere]">
-      <SiteHeader context="팀 대시보드" nav={{ href: "/meetings/sample", label: `${latest?.shortLabel ?? ""} 회의 결과`, icon: "back" }} />
+      <SiteHeader
+        context="팀 대시보드"
+        nav={latest ? { href: meetingHrefs[latest.id], label: `${latest.shortLabel} 회의 결과`, shortLabel: "최근 회의" } : undefined}
+      />
 
       <main className="mx-auto flex w-full max-w-page flex-col gap-12 px-5 pb-24 pt-10 sm:px-8">
         <section className="flex animate-fade-up flex-col gap-2">
@@ -51,7 +69,7 @@ export default function DashboardPage() {
 
         <section aria-labelledby="history-title" className="flex flex-col gap-4">
           <SectionHeading id="history-title" title="회의 기록과 캐치업 현황" />
-          <MeetingHistory rounds={data.rounds} members={data.members} />
+          <MeetingHistory rounds={data.rounds} members={data.members} hrefs={meetingHrefs} />
         </section>
 
         <section aria-labelledby="search-title" className="flex flex-col gap-4">

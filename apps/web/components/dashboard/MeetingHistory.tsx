@@ -1,19 +1,34 @@
+import Link from "next/link";
 import type { Member, MeetingRound } from "@/lib/types";
 import { Avatar } from "@/components/ui/Avatar";
 
 type Props = {
   rounds: MeetingRound[];
   members: Member[];
+  /** 회의 id → 결과 페이지 주소. 결과가 없는 회의는 빠져 있고 링크 없이 표시 */
+  hrefs?: Record<string, string>;
 };
 
-export function MeetingHistory({ rounds, members }: Props) {
+export function MeetingHistory({ rounds, members, hrefs = {} }: Props) {
   return (
     <div className="rounded-lg border border-line bg-white px-5 py-1 md:px-6">
       <ul className="m-0 list-none p-0">
         {rounds.map((r) => (
           <li key={r.id} className="flex flex-wrap items-center gap-4 border-b border-line py-4">
             <div className="min-w-[150px]">
-              <p className="m-0 text-[15px] font-bold">{r.title}</p>
+              {hrefs[r.id] ? (
+                <Link
+                  href={hrefs[r.id]}
+                  className="inline-flex min-h-11 items-center gap-1 text-[15px] font-bold text-accent-strong no-underline transition-colors duration-150 hover:text-accent-deep"
+                >
+                  {r.title}
+                  <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </Link>
+              ) : (
+                <p className="m-0 text-[15px] font-bold">{r.title}</p>
+              )}
               <p className="mt-1 text-[13px] tabular-nums text-ink-soft">
                 {r.dateLabel} · 참석 {r.attendDone}/{r.attendTotal}
               </p>

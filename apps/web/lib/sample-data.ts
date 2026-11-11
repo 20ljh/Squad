@@ -1,4 +1,5 @@
 import type { Dashboard, Meeting, Member } from "./types";
+import { SAMPLE_PROJECT_ID, meetingPath } from "./paths";
 
 // 목업과 동일한 예시 데이터. 실제 연결 시 DB 조회 결과로 교체합니다.
 
@@ -10,7 +11,7 @@ export const members: Member[] = [
 ];
 
 export const sampleMeeting: Meeting = {
-  id: "sample",
+  id: "m3",
   teamName: "마켓세이프 · 캡스톤 프로젝트팀",
   title: "3차 정기회의 결과",
   shortTitle: "3차 회의",
@@ -103,15 +104,16 @@ export const sampleDashboard: Dashboard = {
     answer:
       "3차 회의(9/22)에서 민수가 제안했어요: \"REST가 학습 곡선도 낮고 일정에 맞다\"는 이유로, 하은도 \"GraphQL은 오버스펙\"이라며 동의해 REST 방식으로 최종 확정했습니다.",
     linkLabel: "3차 회의 · 안건 02 바로가기",
-    href: "/meetings/sample#summary",
+    href: `${meetingPath(SAMPLE_PROJECT_ID, "m3")}#summary`,
   },
 };
 
-/** 샘플 데이터 조회 — 실제로는 DB/API 호출로 교체 */
-export function getMeeting(id: string): Meeting | null {
-  return id === sampleMeeting.id ? sampleMeeting : null;
+/** 샘플 데이터 조회 — 실제로는 DB/API 호출로 교체. 없는 프로젝트·회의는 null */
+export function getMeeting(projectId: string, meetingId: string): Meeting | null {
+  if (projectId !== SAMPLE_PROJECT_ID) return null;
+  return meetingId === sampleMeeting.id ? sampleMeeting : null;
 }
 
-export function getDashboard(): Dashboard {
-  return sampleDashboard;
+export function getDashboard(projectId: string): Dashboard | null {
+  return projectId === SAMPLE_PROJECT_ID ? sampleDashboard : null;
 }

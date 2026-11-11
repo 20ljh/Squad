@@ -1,0 +1,39 @@
+import { expect, test } from "@playwright/test";
+
+// 화면끼리 이어지는지: 메인 → 프로젝트 메인(대시보드) → 회의 결과 → 다시 프로젝트 메인
+test.describe("화면 연결", () => {
+  test("메인에서 샘플 프로젝트를 거쳐 회의 결과까지 이동한다", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto("/");
+    await page.getByRole("link", { name: "샘플 프로젝트 보기" }).click();
+    await expect(page).toHaveURL("/p/sample");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("프로젝트 진행 현황");
+
+    // 회의 기록에서 결과가 있는 회의만 링크
+    await page.getByRole("link", { name: "3차 정기회의" }).click();
+    await expect(page).toHaveURL("/p/sample/meetings/m3");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("3차 정기회의 결과");
+
+    await page.getByRole("link", { name: "팀 대시보드" }).click();
+    await expect(page).toHaveURL("/p/sample");
+  });
+
+  test("결과가 없는 회의는 링크가 아니다", async ({ page }) => {
+    await page.goto("/p/sample");
+    await expect(page.getByRole("link", { name: "1차 정기회의" })).toHaveCount(0);
+    await expect(page.getByText("1차 정기회의")).toBeVisible();
+  });
+
+  test("없는 프로젝트·회의 주소는 404", async ({ page }) => {
+    expect((await page.goto("/p/nope"))?.status()).toBe(404);
+    expect((await page.goto("/p/sample/meetings/nope"))?.status()).toBe(404);
+    expect((await page.goto("/p/nope/meetings/m3"))?.status()).toBe(404);
+  });
+
+  test("예전 예시 주소는 새 주소로 넘어간다", async ({ page }) => {
+    await page.goto("/dashboard");
+    await expect(page).toHaveURL("/p/sample");
+    await page.goto("/meetings/sample");
+    await expect(page).toHaveURL("/p/sample/meetings/m3");
+  });
+});

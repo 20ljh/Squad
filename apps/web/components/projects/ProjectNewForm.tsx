@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { RecoveryCodeDialog } from "./RecoveryCodeDialog";
+import { SAMPLE_PROJECT_ID, projectPath } from "@/lib/paths";
 
 // 기본 프로젝트 설정 폼 (/projects/new)
 // 지금은 화면만 있는 예시: 입력 검사까지 하고, 실제 생성(POST /api/projects)은 DB 단계에서 연결.
@@ -81,6 +82,8 @@ export function ProjectNewForm() {
   const [members, setMembers] = useState<string[]>([]);
   const [errors, setErrors] = useState<Errors>({});
   const [notice, setNotice] = useState<string | null>(null);
+  // 예시 생성이 끝났는지. 실제 생성(DB)이 생기면 만든 프로젝트 주소로 바로 이동
+  const [created, setCreated] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   function addMember() {
@@ -118,6 +121,7 @@ export function ProjectNewForm() {
     setErrors(next);
     if (next.name || next.leader) {
       setNotice(null);
+      setCreated(false);
       return;
     }
     // 입력이 맞으면 복구 코드 팝업부터 (주의 → 코드 → 확인). 실제 생성은 팝업의 코드 단계에서 일어남
@@ -247,6 +251,14 @@ export function ProjectNewForm() {
       <div className="flex flex-col gap-3">
         <p aria-live="polite" className="m-0 rounded-sm bg-accent-soft px-4 py-3 text-sm text-accent-deep empty:hidden">
           {notice}
+          {created ? (
+            <>
+              {" "}
+              <Link href={projectPath(SAMPLE_PROJECT_ID)} className="font-bold text-accent-deep underline underline-offset-2 hover:text-ink">
+                샘플 프로젝트 메인 보기
+              </Link>
+            </>
+          ) : null}
         </p>
         <div className="flex flex-col gap-3 md:flex-row-reverse md:items-center">
           <button
@@ -271,6 +283,7 @@ export function ProjectNewForm() {
           setDialogOpen(false);
           // TODO: 생성 완료·초대 공유 화면으로 이동
           setNotice("프로젝트를 만들었어요(예시). 다음 단계에서 초대 공유 화면으로 이어져요.");
+          setCreated(true);
         }}
       />
     </form>
