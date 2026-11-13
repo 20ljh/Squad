@@ -13,6 +13,8 @@ import { formatFullDate, memberMap } from "@/lib/format";
 import { pageTitle } from "@/lib/brand";
 import { STATUS_LABEL } from "@/lib/projects";
 import { MeetingProgress } from "@/components/meeting/MeetingProgress";
+import { MeetingTabs } from "@/components/meeting/MeetingTabs";
+import { TranscriptPlayer } from "@/components/meeting/TranscriptPlayer";
 
 // Next 14: params는 일반 객체입니다(Next 15부터는 Promise).
 type Params = { params: { id: string; mid: string } };
@@ -47,27 +49,38 @@ export default async function MeetingResultPage({ params }: Params) {
 
   return (
     <div className="min-h-screen break-keep bg-surface-alt [overflow-wrap:anywhere]">
-      <SiteHeader
-        context="회의 결과 기록"
-        nav={{ href: projectPath(params.id), label: "팀 대시보드", icon: "back" }}
-      />
+      <SiteHeader context="회의 결과 기록" nav={{ href: projectPath(params.id), label: "팀 대시보드", icon: "back" }} />
 
       <main className="mx-auto flex w-full max-w-page flex-col gap-12 px-5 pb-24 pt-10 sm:px-8">
         <section className="flex animate-fade-up flex-col gap-6">
           <div className="flex flex-wrap items-baseline justify-between gap-3">
             <div>
               <p className="mb-2 text-sm font-semibold text-accent-strong">{meeting.teamName}</p>
-              <h1 className="m-0 text-balance font-display text-[clamp(26px,4vw,36px)] font-bold tracking-[-.01em]">{done ? meeting.title : meeting.shortTitle}</h1>
+              <h1 className="m-0 text-balance font-display text-[clamp(26px,4vw,36px)] font-bold tracking-[-.01em]">
+                {done ? meeting.title : meeting.shortTitle}
+              </h1>
             </div>
             {done ? (
-            <p className="m-0 flex items-center gap-2 rounded-full bg-accent-soft px-3 py-1.5 text-[13px] font-semibold tabular-nums text-accent-strong">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M5 12.5l4.5 4.5L19 7.5" />
-              </svg>
-              STT 전사 완료 · {meeting.transcriptDuration}
-            </p>
+              <p className="m-0 flex items-center gap-2 rounded-full bg-accent-soft px-3 py-1.5 text-[13px] font-semibold tabular-nums text-accent-strong">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M5 12.5l4.5 4.5L19 7.5" />
+                </svg>
+                STT 전사 완료 · {meeting.transcriptDuration}
+              </p>
             ) : (
-              <p className={`m-0 rounded-full px-3 py-1.5 text-[13px] font-semibold ${status === "failed" ? "bg-warn-soft text-warn" : "border border-line bg-white text-ink-soft"}`}>
+              <p
+                className={`m-0 rounded-full px-3 py-1.5 text-[13px] font-semibold ${status === "failed" ? "bg-warn-soft text-warn" : "border border-line bg-white text-ink-soft"}`}
+              >
                 {STATUS_LABEL[status]}
               </p>
             )}
@@ -91,48 +104,62 @@ export default async function MeetingResultPage({ params }: Params) {
           </dl>
         </section>
 
-        {!done ? <MeetingProgress meetingId={meeting.id} status={status} speakerCount={meeting.speakerCount} processing={meeting.processing} failReason={meeting.failReason} mapping={meeting.mapping} /> : null}
+        {!done ? (
+          <MeetingProgress
+            meetingId={meeting.id}
+            status={status}
+            speakerCount={meeting.speakerCount}
+            processing={meeting.processing}
+            failReason={meeting.failReason}
+            mapping={meeting.mapping}
+          />
+        ) : null}
 
         {done ? (
-          <>
-        <section id="summary" aria-labelledby="summary-title" className="flex scroll-mt-20 flex-col gap-4">
-          <SectionHeading id="summary-title" title="안건별 논의와 결정" />
-          {meeting.agenda.map((item) => (
-            <AgendaCard key={item.id} item={item} members={byId} />
-          ))}
-        </section>
+          <MeetingTabs
+            transcript={<TranscriptPlayer meetingId={meeting.id} record={meeting.record ?? { hasAudio: false, lines: [] }} members={meeting.members} />}
+            summary={
+              <>
+                <section id="summary" aria-labelledby="summary-title" className="flex scroll-mt-20 flex-col gap-4">
+                  <SectionHeading id="summary-title" title="안건별 논의와 결정" />
+                  {meeting.agenda.map((item) => (
+                    <AgendaCard key={item.id} item={item} members={byId} />
+                  ))}
+                </section>
 
-        <section id="mindmap" aria-labelledby="mindmap-title" className="flex scroll-mt-20 flex-col gap-4">
-          <SectionHeading id="mindmap-title" title="논의 흐름 마인드맵" />
-          <div className="flex flex-col gap-4 rounded-lg border border-line bg-white px-5 py-6 md:px-6">
-            <figure className="m-0">
-              <p className="mb-2 text-[13px] text-ink-soft sm:hidden">옆으로 밀어서 전체 흐름을 볼 수 있어요</p>
-              <div className="overflow-x-auto">
-                <MindMap
-                  meetingLabel={meeting.shortTitle}
-                  meetingSub={`${mm}/${dd} · ${attendees.length}인 참석`}
-                  agenda={meeting.agenda}
-                  members={byId}
+                <section id="mindmap" aria-labelledby="mindmap-title" className="flex scroll-mt-20 flex-col gap-4">
+                  <SectionHeading id="mindmap-title" title="논의 흐름 마인드맵" />
+                  <div className="flex flex-col gap-4 rounded-lg border border-line bg-white px-5 py-6 md:px-6">
+                    <figure className="m-0">
+                      <p className="mb-2 text-[13px] text-ink-soft sm:hidden">옆으로 밀어서 전체 흐름을 볼 수 있어요</p>
+                      <div className="overflow-x-auto">
+                        <MindMap
+                          meetingLabel={meeting.shortTitle}
+                          meetingSub={`${mm}/${dd} · ${attendees.length}인 참석`}
+                          agenda={meeting.agenda}
+                          members={byId}
+                        />
+                      </div>
+                      <figcaption className="mt-3 text-[13px] text-ink-soft">
+                        화살표는 팀원 의견이 결정으로 모이는 흐름을, 카드 왼쪽 색 막대는 발언한 팀원을 나타냅니다.
+                      </figcaption>
+                    </figure>
+                    <MemberLegend members={meeting.members} />
+                  </div>
+                </section>
+
+                <section id="schedule" aria-labelledby="schedule-title" className="flex scroll-mt-20 flex-col gap-4">
+                  <SectionHeading id="schedule-title" title="회의 중 언급된 일정" />
+                  <ScheduleList items={meeting.schedules} baseDate={meeting.date} />
+                </section>
+
+                <ExportBar
+                  meetingId={meeting.id}
+                  summary={`안건 ${meeting.agenda.length}건 · 결정사항 ${decisionCount}건 · 일정 ${meeting.schedules.length}건이 함께 정리돼요.`}
                 />
-              </div>
-              <figcaption className="mt-3 text-[13px] text-ink-soft">
-                화살표는 팀원 의견이 결정으로 모이는 흐름을, 카드 왼쪽 색 막대는 발언한 팀원을 나타냅니다.
-              </figcaption>
-            </figure>
-            <MemberLegend members={meeting.members} />
-          </div>
-        </section>
-
-        <section id="schedule" aria-labelledby="schedule-title" className="flex scroll-mt-20 flex-col gap-4">
-          <SectionHeading id="schedule-title" title="회의 중 언급된 일정" />
-          <ScheduleList items={meeting.schedules} baseDate={meeting.date} />
-        </section>
-
-        <ExportBar
-          meetingId={meeting.id}
-          summary={`안건 ${meeting.agenda.length}건 · 결정사항 ${decisionCount}건 · 일정 ${meeting.schedules.length}건이 함께 정리돼요.`}
-        />
-          </>
+              </>
+            }
+          />
         ) : null}
       </main>
     </div>

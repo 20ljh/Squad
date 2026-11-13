@@ -70,6 +70,11 @@ export type Meeting = {
     candidates: Member[];
     transcript: { start: number; label: string; text: string }[];
   };
+  /** 정리가 끝난 회의의 "녹음·원문" 탭: 녹음이 있는지와 시간·말한 사람이 붙은 원문 */
+  record?: {
+    hasAudio: boolean;
+    lines: { start: number; end: number; memberId: string; text: string }[];
+  };
   /** 처리 실패 이유 (status가 failed일 때, 또는 요약 실패로 화자 확인에 돌아왔을 때) */
   failReason?: string | null;
   /** 처리 중(받아쓰는 중) 화면용: 올린 파일과 지금까지 받아쓴 줄 */

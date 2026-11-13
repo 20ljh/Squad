@@ -18,6 +18,19 @@ test.describe("화면 연결", () => {
     await expect(page).toHaveURL("/p/sample");
   });
 
+  test("회의 결과는 요약·녹음·원문 탭으로 나뉜다 (녹음이 없는 예시 회의)", async ({ page }) => {
+    await page.goto("/p/sample/meetings/m3");
+    await expect(page.getByRole("tab", { name: "요약" })).toHaveAttribute("aria-selected", "true");
+    await expect(page.getByRole("heading", { name: "안건별 논의와 결정" })).toBeVisible();
+    await page.getByRole("tab", { name: "녹음·원문" }).click();
+    await expect(page).toHaveURL(/#transcript$/);
+    await expect(page.getByRole("heading", { name: "안건별 논의와 결정" })).toBeHidden();
+    await expect(page.getByText("이 회의에는 녹음과 원문이 없어요.", { exact: false })).toBeVisible();
+    // 키보드: 왼쪽 화살표로 요약 탭
+    await page.keyboard.press("ArrowLeft");
+    await expect(page.getByRole("tab", { name: "요약" })).toHaveAttribute("aria-selected", "true");
+  });
+
   test("결과가 없는 회의는 링크가 아니다", async ({ page }) => {
     await page.goto("/p/sample");
     await expect(page.getByRole("link", { name: "1차 정기회의" })).toHaveCount(0);

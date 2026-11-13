@@ -115,6 +115,18 @@ export async function getMeeting(projectId: string, meetingId: string): Promise<
     status: (["draft", "transcribing", "mapping", "summarizing", "done", "failed"].includes(m.status) ? m.status : "draft") as Meeting["status"],
     speakerCount: m.speakerCount ?? undefined,
     failReason: m.failReason,
+    record:
+      m.status === "done"
+        ? {
+            hasAudio: m.audioPath !== null,
+            lines: m.segments.map((s) => ({
+              start: s.startSec,
+              end: s.endSec,
+              memberId: s.speakerLabelId ? labelToMember[s.speakerLabelId] ?? "" : "",
+              text: s.text,
+            })),
+          }
+        : undefined,
     mapping: m.status === "mapping" ? mappingView(m.speakerLabels, m.segments, members.filter((x) => attendeeIds.includes(x.id))) : undefined,
     processing:
       m.status === "transcribing"
