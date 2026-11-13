@@ -3,11 +3,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { RecoveryCodeDialog } from "./RecoveryCodeDialog";
 import { projectPath } from "@/lib/paths";
 
 // 기본 프로젝트 설정 폼 (/projects/new)
-// 입력 검사 → 복구 코드 팝업(로그인 전이라 보여 주기만) → POST /api/projects 로 저장 → 만든 프로젝트 메인으로 이동
+// 입력 검사 → POST /api/projects 로 저장 → 만든 프로젝트의 팀 대시보드로 이동
+// (복구 코드 팝업은 저장되지 않는 코드를 보여 줘서 2026-11-13에 뺌. 팀장 복구는 구글 로그인으로 해결)
 
 const MAX_MEMBERS = 10;
 const MAX_NAME = 20;
@@ -91,7 +91,6 @@ export function ProjectNewForm() {
   const [errors, setErrors] = useState<Errors>({});
   const [notice, setNotice] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
   const router = useRouter();
 
   async function createProject() {
@@ -154,9 +153,8 @@ export function ProjectNewForm() {
       setNotice(null);
       return;
     }
-    // 입력이 맞으면 복구 코드 팝업부터 (주의 → 코드 → 확인). 실제 생성은 팝업의 코드 단계에서 일어남
-    setNotice(null);
-    setDialogOpen(true);
+    // TODO(참여 기능): 만든 뒤 생성 완료·초대 공유 화면으로 이동
+    void createProject();
   }
 
   return (
@@ -318,15 +316,6 @@ export function ProjectNewForm() {
         </div>
       </div>
 
-      <RecoveryCodeDialog
-        open={dialogOpen}
-        onCancel={() => setDialogOpen(false)}
-        onDone={() => {
-          setDialogOpen(false);
-          // TODO(참여 기능): 생성 완료·초대 공유 화면으로 이동
-          void createProject();
-        }}
-      />
     </form>
   );
 }

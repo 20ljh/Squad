@@ -24,7 +24,7 @@ test.describe("프로젝트 만들기 · 기본 설정", () => {
     await expect(page.getByRole("button", { name: "지현 빼기" })).toHaveCount(0);
   });
 
-  test("필수 칸을 채우면 복구 코드 팝업: 주의 → 코드 → 적어 뒀어요 체크 후 확인 → DB에 저장되고 프로젝트 메인으로", async ({ page }) => {
+  test("필수 칸을 채우고 만들면 DB에 저장되고 팀 대시보드로 이동한다", async ({ page }) => {
     await page.goto("/projects/new");
     // 실제로 DB에 저장됨. "e2e "로 시작하는 프로젝트는 npm run db:seed 가 지움
     await page.getByLabel(/프로젝트 이름/).fill("e2e 시험 프로젝트");
@@ -36,23 +36,6 @@ test.describe("프로젝트 만들기 · 기본 설정", () => {
     const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
     await page.getByLabel(/최종 마감일/).fill(iso);
     await page.getByRole("button", { name: "프로젝트 만들기" }).click();
-
-    const dialog = page.getByRole("dialog");
-    await expect(dialog.getByRole("heading", { name: "복구 코드를 꼭 보관해 주세요" })).toBeVisible();
-    await dialog.getByRole("button", { name: "확인하고 코드 보기" }).click();
-
-    await expect(dialog.getByRole("heading", { name: "복구 코드" })).toBeVisible();
-    await expect(dialog.getByText(/^[2-9A-Z]{4}-[2-9A-Z]{4}-[2-9A-Z]{4}-[2-9A-Z]{4}$/)).toBeVisible();
-
-    // 코드 단계에서는 Esc로 닫히지 않음
-    await page.keyboard.press("Escape");
-    await expect(dialog).toBeVisible();
-
-    const done = dialog.getByRole("button", { name: "확인", exact: true });
-    await expect(done).toBeDisabled();
-    await dialog.getByLabel("복구 코드를 안전한 곳에 적어 뒀어요").check();
-    await done.click();
-    await expect(dialog).toBeHidden();
 
     // 만든 프로젝트의 팀 대시보드로 이동: 예시 대시보드와 같은 구성, 숫자는 0·목록은 빈 상태
     await expect(page).toHaveURL(/\/p\/[a-z0-9]+$/);
@@ -72,15 +55,6 @@ test.describe("프로젝트 만들기 · 기본 설정", () => {
     await page.getByLabel(/최종 마감일/).fill("2020-01-01");
     await page.getByRole("button", { name: "프로젝트 만들기" }).click();
     await expect(page.getByText("최종 마감일은 오늘이거나 이후 날짜로 골라 주세요.")).toBeVisible();
-    await expect(page.getByRole("dialog")).toBeHidden();
-  });
-
-  test("주의 단계에서는 돌아가기로 취소할 수 있다", async ({ page }) => {
-    await page.goto("/projects/new");
-    await page.getByLabel(/프로젝트 이름/).fill("마켓셰이프");
-    await page.getByLabel(/내 이름/).fill("하은");
-    await page.getByRole("button", { name: "프로젝트 만들기" }).click();
-    await page.getByRole("dialog").getByRole("button", { name: "돌아가기" }).click();
-    await expect(page.getByRole("dialog")).toBeHidden();
+    await expect(page).toHaveURL("/projects/new");
   });
 });
