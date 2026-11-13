@@ -1,8 +1,9 @@
 import type { Dashboard, Meeting, Member } from "./types";
 import { SAMPLE_PROJECT_ID, meetingPath } from "./paths";
-import { sttTestMeeting } from "./sample-stt-meeting";
 
-// 목업과 동일한 예시 데이터. 실제 연결 시 DB 조회 결과로 교체합니다.
+// 목업과 동일한 예시 데이터.
+// - 회의(sampleMeeting)는 prisma/seed.ts 가 DB에 넣는 원본. 화면은 DB에서 읽음(lib/meetings.ts)
+// - 대시보드(sampleDashboard)는 Phase 2에서 DB 집계로 바꾸기 전까지 이 값을 그대로 보여 줌
 
 export const members: Member[] = [
   { id: "jihyun", name: "지현", role: "UI/UX", initial: "지", color: "#C1573D" },
@@ -109,13 +110,7 @@ export const sampleDashboard: Dashboard = {
   },
 };
 
-/** 샘플 데이터 조회 — 실제로는 DB/API 호출로 교체. 없는 프로젝트·회의는 null */
-export function getMeeting(projectId: string, meetingId: string): Meeting | null {
-  if (projectId !== SAMPLE_PROJECT_ID) return null;
-  if (meetingId === sttTestMeeting.id) return sttTestMeeting; // 받아쓰기·요약 시험 결과 (주소로만 들어감)
-  return meetingId === sampleMeeting.id ? sampleMeeting : null;
-}
-
+/** 대시보드 — 지금은 예시 프로젝트만. 없는 프로젝트는 null */
 export function getDashboard(projectId: string): Dashboard | null {
   return projectId === SAMPLE_PROJECT_ID ? sampleDashboard : null;
 }

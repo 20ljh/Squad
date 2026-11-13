@@ -7,7 +7,8 @@ import { ParticipationCard } from "@/components/dashboard/ParticipationCard";
 import { HighlightList } from "@/components/dashboard/HighlightList";
 import { MeetingHistory } from "@/components/dashboard/MeetingHistory";
 import { MeetingSearch } from "@/components/dashboard/MeetingSearch";
-import { getDashboard, getMeeting } from "@/lib/sample-data";
+import { getDashboard } from "@/lib/sample-data";
+import { meetingIdsWithResult } from "@/lib/meetings";
 import { meetingPath } from "@/lib/paths";
 import { memberMap } from "@/lib/format";
 import { pageTitle } from "@/lib/brand";
@@ -20,15 +21,16 @@ export function generateMetadata({ params }: Params): Metadata {
 }
 
 // 프로젝트 메인(/p/[id]) — 지금은 팀 대시보드가 곧 프로젝트 메인
-export default function ProjectMainPage({ params }: Params) {
+export default async function ProjectMainPage({ params }: Params) {
   const data = getDashboard(params.id);
   if (!data) notFound();
 
   const byId = memberMap(data.members);
-  // 결과 페이지가 있는 회의만 링크로 연결 (예시 데이터는 3차 회의만 결과가 있음)
+  // 결과 페이지가 있는(DB에 있는) 회의만 링크로 연결 (예시 프로젝트는 3차 회의만 있음)
+  const withResult = await meetingIdsWithResult(params.id);
   const meetingHrefs: Record<string, string> = {};
   for (const r of data.rounds) {
-    if (getMeeting(params.id, r.id)) meetingHrefs[r.id] = meetingPath(params.id, r.id);
+    if (withResult.has(r.id)) meetingHrefs[r.id] = meetingPath(params.id, r.id);
   }
   const latest = [...data.rounds].reverse().find((r) => meetingHrefs[r.id]);
 

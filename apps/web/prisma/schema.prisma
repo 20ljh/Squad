@@ -1,0 +1,228 @@
+// DB 스키마. CLAUDE.md 6절 초안을 바탕으로 함. 화면 모양(lib/types.ts)으로의 변환은 lib/meetings.ts
+// 바꾼 뒤: npm run db:migrate -- --name <변경이름>
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String        @id @default(cuid())
+  googleSub      String        @unique // 구글 계정 고유 ID(sub)
+  email          String
+  name           String // 구글 프로필 이름 (프로젝트 안 표시 이름은 Member.name)
+  voiceConsentAt DateTime? // 목소리 특징 저장 동의 시각. 처음 프로젝트를 만들거나 참여할 때 한 번 받음
+  createdAt      DateTime      @default(now())
+  voiceProfile   VoiceProfile?
+  members        Member[]
+  sessions       Session[]
+  joinRequests   JoinRequest[]
+}
+
+model Session {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique
+  label      String // 기기 표시 이름 "Chrome · Windows"
+  expiresAt  DateTime
+  lastSeenAt DateTime  @default(now())
+  revokedAt  DateTime?
+}
+
+model Project {
+  id                 String        @id @default(cuid())
+  name               String // "마켓세이프"
+  course             String? // "캡스톤 프로젝트팀"
+  inviteCodeHash     String        @unique // 초대 코드 원문은 저장하지 않음. HMAC-SHA256(서버 비밀값 AUTH_SECRET, 코드)만 저장해 DB가 새도 되돌릴 수 없게
+  inviteCodeIssuedAt DateTime
+  notionPageId       String?
+  createdAt          DateTime      @default(now())
+  members            Member[]
+  meetings           Meeting[]
+  joinRequests       JoinRequest[]
+}
+
+model Member {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull) // 계정을 지우면 팀원 기록은 남기고 연결만 끊음
+  name      String
+  role      String   @default("member") // 권한: leader | member
+  position  String   @default("") // 맡은 일: "UI/UX" 등 (화면 타입의 Member.role)
+  initial   String // 아바타 글자
+  color     String // hex. 흰 글자와 대비 4.5:1 이상
+  order     Int      @default(0) // 화면 표시 순서
+  createdAt DateTime @default(now())
+
+  // 다른 테이블이 이 팀원을 가리키는 관계 (팀원을 지우면 아래 칸은 비워지거나 함께 지워짐)
+  attendances      Attendance[]
+  reads            MeetingRead[]
+  opinions         Opinion[]
+  actionItems      ActionItem[]
+  ownedAgendaItems AgendaItem[]   @relation("AgendaOwner")
+  speakerLabels    SpeakerLabel[] @relation("SpeakerMember")
+  suggestedLabels  SpeakerLabel[] @relation("SpeakerSuggested")
+  joinRequests     JoinRequest[]
+
+  @@unique([projectId, userId])
+}
+
+model JoinRequest {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade) // 계정을 지우면 요청도 지움
+  message   String // 처리가 끝난 요청은 일정 기간 뒤 지울 것 (이름 등 개인정보가 들어감)
+  memberId  String?
+  member    Member?  @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  status    String   @default("pending") // pending | approved | rejected
+  createdAt DateTime @default(now())
+}
+
+model VoiceProfile {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  embeddingEnc Bytes // 생체인식 정보라 암호화해서 저장(AES-256-GCM, 키는 .env). 평문 임베딩은 DB에 두지 않음
+  keyVersion   Int // 암호화 키 버전 (키를 바꿀 때 다시 암호화)
+  sampleCount  Int
+  model        String
+  updatedAt    DateTime @updatedAt
+}
+
+model Meeting {
+  id            String          @id @default(cuid())
+  projectId     String
+  project       Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title         String // "3차 정기회의 결과"
+  shortTitle    String // "3차 회의" (마인드맵 중심 노드)
+  summary       String?         @db.Text // LLM이 쓴 회의 전체 요약 두세 문장
+  startedAt     DateTime
+  endedAt       DateTime?
+  mode          String // "Discord 음성채널", "대면" 등
+  audioPath     String? // 원본 음성 파일 위치. 무작위 이름, 공개 폴더 밖, 팀원만 받을 수 있게
+  audioDeleteAt DateTime? // 원본 음성 삭제 예정일 (요약을 마친 뒤 보관 기간이 지나면 지움)
+  durationSec   Int?
+  speakerCount  Int? // 고른 참석자 수 → pyannote num_speakers
+  status        String          @default("draft") // draft | transcribing | mapping | summarizing | done | failed
+  notionPageUrl String?
+  createdAt     DateTime        @default(now())
+  agendaItems   AgendaItem[]
+  schedules     ScheduleItem[]
+  attendances   Attendance[]
+  speakerLabels SpeakerLabel[]
+  segments      SpeechSegment[]
+  reads         MeetingRead[]
+}
+
+model SpeakerLabel {
+  id                String          @id @default(cuid())
+  meetingId         String
+  meeting           Meeting         @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  label             String // "화자1"
+  memberId          String? // 확정된 팀원 (같은 프로젝트의 팀원인지 API에서도 확인)
+  member            Member?         @relation("SpeakerMember", fields: [memberId], references: [id], onDelete: SetNull)
+  suggestedMemberId String? // 목소리 특징으로 자동 매칭된 팀원 (Phase 2)
+  suggestedMember   Member?         @relation("SpeakerSuggested", fields: [suggestedMemberId], references: [id], onDelete: SetNull)
+  similarity        Float?
+  confirmedAt       DateTime?
+  segments          SpeechSegment[]
+  opinions          Opinion[]
+
+  @@unique([meetingId, label])
+}
+
+model SpeechSegment {
+  id             String        @id @default(cuid())
+  meetingId      String
+  meeting        Meeting       @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  speakerLabelId String?
+  speakerLabel   SpeakerLabel? @relation(fields: [speakerLabelId], references: [id])
+  startSec       Float
+  endSec         Float
+  text           String        @db.Text
+
+  @@index([meetingId, startSec])
+}
+
+model AgendaItem {
+  id            String       @id @default(cuid())
+  meetingId     String
+  meeting       Meeting      @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  order         Int
+  title         String
+  shortTitle    String // 마인드맵 노드용 (12자 내외)
+  decisionText  String?
+  decisionShort String? // 마인드맵 결정 노드용 (14자 내외)
+  ownerMemberId String?
+  ownerMember   Member?      @relation("AgendaOwner", fields: [ownerMemberId], references: [id], onDelete: SetNull)
+  ownerLabel    String? // "전원", "화자1" 등 (ownerMemberId가 없을 때 표시)
+  dueDate       DateTime? // 하루로 정해질 때만
+  dueText       String? // 날짜가 있으면 뒤에 붙는 말("자정"), 없으면 원문 마감 표현("주말")
+  opinions      Opinion[]
+  actionItems   ActionItem[]
+}
+
+model Opinion {
+  id             String        @id @default(cuid())
+  agendaItemId   String
+  agendaItem     AgendaItem    @relation(fields: [agendaItemId], references: [id], onDelete: Cascade)
+  order          Int           @default(0)
+  memberId       String? // 매핑이 안 됐으면 null
+  member         Member?       @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  speakerLabelId String? // 매핑 전에도 "화자1"로 표시하기 위한 연결
+  speakerLabel   SpeakerLabel? @relation(fields: [speakerLabelId], references: [id])
+  quote          String        @db.Text
+  gist           String // 마인드맵 노드용 요지 (15자 내외)
+  pinned         Boolean       @default(false)
+}
+
+model ActionItem {
+  id           String     @id @default(cuid())
+  agendaItemId String
+  agendaItem   AgendaItem @relation(fields: [agendaItemId], references: [id], onDelete: Cascade)
+  memberId     String?
+  member       Member?    @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  title        String
+  dueDate      DateTime?
+  done         Boolean    @default(false)
+}
+
+model ScheduleItem {
+  id         String    @id @default(cuid())
+  meetingId  String
+  meeting    Meeting   @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  order      Int       @default(0)
+  label      String
+  dueDate    DateTime? // 하루로 정해질 때만. "주말까지"처럼 모호하면 null
+  dueText    String? // 원문의 마감 표현
+  ownerLabel String?
+}
+
+model Attendance {
+  meetingId String
+  meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  memberId  String
+  member    Member  @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  present   Boolean
+
+  @@id([meetingId, memberId])
+}
+
+model MeetingRead {
+  meetingId String
+  meeting   Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  memberId  String
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  readAt    DateTime @default(now())
+
+  @@id([meetingId, memberId])
+}

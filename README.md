@@ -7,17 +7,24 @@
 
 ## 지금 실행해보기
 
+Docker Desktop(또는 Docker)이 켜져 있어야 합니다.
+
 ```bash
 cd apps/web
+cp ../../.env.example .env   # 처음 한 번
 npm install
+npm run db:up        # PostgreSQL 컨테이너 실행 (docker-compose.yml)
+npm run db:migrate   # 테이블 만들기
+npm run db:seed      # 예시 데이터 넣기
 npm run dev
-# http://localhost:3000                  메인 (프로젝트 만들기 · 초대 코드로 참여 · 내 프로젝트)
-# http://localhost:3000/projects/new     프로젝트 만들기
-# http://localhost:3000/p/sample                프로젝트 메인 · 팀 대시보드 (예시 데이터)
-# http://localhost:3000/p/sample/meetings/m3    회의 결과 (예시 데이터)
+# http://localhost:3000                          메인 (프로젝트 만들기 · 초대 코드로 참여 · 내 프로젝트)
+# http://localhost:3000/projects/new             프로젝트 만들기
+# http://localhost:3000/p/sample                 프로젝트 메인 · 팀 대시보드 (예시 데이터)
+# http://localhost:3000/p/sample/meetings/m3     회의 결과 (DB의 예시 회의)
+# http://localhost:3000/p/rec-test/meetings/stt-test   실제 회의 녹음의 받아쓰기·요약 시험 결과
 ```
 
-화면(UI)을 하나씩 만들어 가는 중입니다. 회의 결과·대시보드는 예시 데이터로 동작하고, 백엔드(로그인, DB, STT, 요약, Notion 내보내기)는 아직 없습니다.
+회의 결과는 DB(PostgreSQL + Prisma)에서 읽고, 대시보드는 아직 예시 데이터입니다. 로그인, 음성 업로드, Notion 내보내기는 만드는 중입니다.
 
 ## 검사
 
@@ -25,5 +32,5 @@ npm run dev
 npm run typecheck
 npm run lint
 npm run build
-npm run test:e2e   # 처음 한 번: npx playwright install chromium
+npm run test:e2e   # DB가 켜져 있어야 함. 처음 한 번: npx playwright install chromium
 ```

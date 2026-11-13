@@ -6,6 +6,8 @@ const nextConfig = {
     return [
       { source: "/dashboard", destination: "/p/sample", permanent: false },
       { source: "/meetings/sample", destination: "/p/sample/meetings/m3", permanent: false },
+      // 받아쓰기·요약 시험 결과는 DB로 옮기면서 시험 프로젝트(rec-test)로 분리
+      { source: "/p/sample/meetings/stt-test", destination: "/p/rec-test/meetings/stt-test", permanent: false },
     ];
   },
 };

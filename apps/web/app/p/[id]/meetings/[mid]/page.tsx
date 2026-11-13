@@ -7,7 +7,8 @@ import { AgendaCard } from "@/components/meeting/AgendaCard";
 import { MindMap } from "@/components/meeting/MindMap";
 import { ScheduleList } from "@/components/meeting/ScheduleList";
 import { ExportBar } from "@/components/meeting/ExportBar";
-import { getMeeting } from "@/lib/sample-data";
+import { getMeeting } from "@/lib/meetings";
+import { getDashboard } from "@/lib/sample-data";
 import { projectPath } from "@/lib/paths";
 import { formatFullDate, memberMap } from "@/lib/format";
 import { pageTitle } from "@/lib/brand";
@@ -15,8 +16,8 @@ import { pageTitle } from "@/lib/brand";
 // Next 14: params는 일반 객체입니다(Next 15부터는 Promise).
 type Params = { params: { id: string; mid: string } };
 
-export function generateMetadata({ params }: Params): Metadata {
-  const meeting = getMeeting(params.id, params.mid);
+export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  const meeting = await getMeeting(params.id, params.mid);
   return { title: pageTitle(meeting ? meeting.title : "회의를 찾을 수 없어요") };
 }
 
@@ -29,8 +30,8 @@ function MetaItem({ label, children }: { label: string; children: React.ReactNod
   );
 }
 
-export default function MeetingResultPage({ params }: Params) {
-  const meeting = getMeeting(params.id, params.mid);
+export default async function MeetingResultPage({ params }: Params) {
+  const meeting = await getMeeting(params.id, params.mid);
   if (!meeting) notFound();
 
   const byId = memberMap(meeting.members);
@@ -40,7 +41,15 @@ export default function MeetingResultPage({ params }: Params) {
 
   return (
     <div className="min-h-screen break-keep bg-surface-alt [overflow-wrap:anywhere]">
-      <SiteHeader context="회의 결과 기록" nav={{ href: projectPath(params.id), label: "팀 대시보드", icon: "back" }} />
+      <SiteHeader
+        context="회의 결과 기록"
+        // 대시보드가 있는 프로젝트(지금은 예시 프로젝트)만 대시보드로, 시험 프로젝트는 처음 화면으로 돌아감
+        nav={
+          getDashboard(params.id)
+            ? { href: projectPath(params.id), label: "팀 대시보드", icon: "back" }
+            : { href: "/", label: "처음으로", icon: "back" }
+        }
+      />
 
       <main className="mx-auto flex w-full max-w-page flex-col gap-12 px-5 pb-24 pt-10 sm:px-8">
         <section className="flex animate-fade-up flex-col gap-6">

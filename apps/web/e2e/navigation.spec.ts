@@ -35,5 +35,8 @@ test.describe("화면 연결", () => {
     await expect(page).toHaveURL("/p/sample");
     await page.goto("/meetings/sample");
     await expect(page).toHaveURL("/p/sample/meetings/m3");
+    await page.goto("/p/sample/meetings/stt-test");
+    await expect(page).toHaveURL("/p/rec-test/meetings/stt-test");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("발표 역할·일정 회의 결과");
   });
 });
