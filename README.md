@@ -24,20 +24,20 @@ npm run dev
 # http://localhost:3000/p/rec-test/meetings/stt-test   실제 회의 녹음의 받아쓰기·요약 시험 결과
 ```
 
-회의 결과는 DB(PostgreSQL + Prisma)에서 읽고, 대시보드는 아직 예시 데이터입니다. 로그인, 음성 업로드, Notion 내보내기는 만드는 중입니다.
+구글 로그인 후 프로젝트를 만들고 팀원을 초대해, 회의 녹음을 올리면 받아쓰기·화자 확인·요약을 거쳐 결과 페이지가 만들어집니다. 결과는 Notion으로 내보내거나 Markdown으로 복사할 수 있습니다. 예시 프로젝트(`/p/sample`)는 로그인 없이 볼 수 있습니다.
 
 ## 받아쓰기 워커 (STT)
 
-회의 녹음을 받아쓰고 화자를 나누는 Python 워커입니다. NVIDIA GPU가 있는 PC에서 실행하고, 웹 API로 작업을 가져갑니다.
+회의 녹음을 받아쓰고 화자를 나누고, 화자 확인이 끝난 회의를 Claude로 요약하는 Python 워커입니다. NVIDIA GPU가 있는 PC에서 실행하고, 웹 API로 작업을 가져갑니다.
 
 ```bash
 # 처음 한 번 (squad 폴더에서): 설치 방법은 workers/stt/requirements.txt 맨 위 참고
-# apps/web/.env 에 HF_TOKEN, WORKER_TOKEN(웹과 같은 값) 필요, ffmpeg 필요
+# apps/web/.env 에 HF_TOKEN, ANTHROPIC_API_KEY, WORKER_TOKEN(웹과 같은 값) 필요, ffmpeg 필요
 workers/stt/.venv/Scripts/python workers/stt/worker.py                       # 같은 PC의 웹(localhost:3000)
 workers/stt/.venv/Scripts/python workers/stt/worker.py --web https://웹주소    # 다른 곳의 웹
 ```
 
-회의 페이지에서 녹음을 올리면 워커가 가져가 받아쓴 문장을 실시간으로 보여 주고, 끝나면 "화자 확인" 단계로 넘어갑니다.
+회의 페이지에서 녹음을 올리면 워커가 가져가 받아쓴 문장을 실시간으로 보여 주고, 끝나면 "화자 확인" 단계로 넘어갑니다. 화자를 확정하면 같은 워커가 요약을 만들어 올립니다(웹 서버는 Claude를 직접 부르지 않음).
 
 ## 배포 (Azure VM + Docker Compose)
 

@@ -84,3 +84,13 @@ test("워커가 가져가 처리하면 회의 페이지가 실시간 줄 → 화
   const again = await request.post(`/api/worker/jobs/${meetingId}/segments`, { headers: auth, data: { audioPath: job.audioPath, segments: [] } });
   expect(again.status()).toBe(409);
 });
+
+// 요약 워커 API: 키가 있어야 하고, 요약할 상태가 아닌 회의는 가져가거나 저장할 수 없음 (실제 Claude 호출은 하지 않음)
+test("요약 워커 API는 키가 필요하고, 요약 중이 아닌 회의는 거절한다", async ({ request }) => {
+  const auth = { authorization: `Bearer ${workerToken()}` };
+  expect((await request.post("/api/worker/summary/claim", { data: {} })).status()).toBe(401);
+  // 예시 회의 m3는 이미 정리 완료 → 가져갈 것 없음, 결과를 올려도 409
+  expect((await request.post("/api/worker/summary/claim", { headers: auth, data: { meetingId: "m3" } })).status()).toBe(204);
+  const res = await request.post("/api/worker/summary/m3/result", { headers: auth, data: { text: "{}" } });
+  expect([409, 422]).toContain(res.status());
+});

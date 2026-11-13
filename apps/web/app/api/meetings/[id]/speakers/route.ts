@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { requireMeetingApi } from "@/lib/auth/access";
 import { db } from "@/lib/db";
-import { summarizeMeeting } from "@/lib/llm/summarize";
 
 type Ctx = { params: { id: string } };
 
 // POST /api/meetings/:id/speakers — 화자 ↔ 팀원 매핑 확정 후 요약 시작
 // 본문: { mapping: { [speakerLabelId]: memberId | null } }  null = 모르겠음("화자1"로 남김)
-// 저장하면 상태가 summarizing 이 되고, 요약(LLM 1회)은 응답을 보낸 뒤 서버에서 이어서 진행 → 회의 페이지가 몇 초마다 확인
+// 저장하면 상태가 summarizing 이 되고, 요약(LLM 1회)은 개발 PC의 워커가 가져가 처리 (/api/worker/summary/*) → 회의 페이지가 몇 초마다 확인
+// 웹 서버(Azure 홍콩)에서는 Anthropic API를 부를 수 없어서 워커(한국)가 부름
 // 로그인한 이 프로젝트 팀원만 (lib/auth/access.ts)
 export async function POST(request: Request, { params }: Ctx) {
   const auth = await requireMeetingApi(params.id);
@@ -42,7 +42,7 @@ export async function POST(request: Request, { params }: Ctx) {
 
   const now = new Date();
   const ok = await db.$transaction(async (tx) => {
-    const moved = await tx.meeting.updateMany({ where: { id: m.id, status: "mapping" }, data: { status: "summarizing", failReason: null } });
+    const moved = await tx.meeting.updateMany({ where: { id: m.id, status: "mapping" }, data: { status: "summarizing", failReason: null, summaryStartedAt: null } });
     if (moved.count === 0) return false;
     for (const [labelId, memberId] of entries) {
       await tx.speakerLabel.update({ where: { id: labelId }, data: { memberId: typeof memberId === "string" ? memberId : null, confirmedAt: now } });
@@ -51,7 +51,5 @@ export async function POST(request: Request, { params }: Ctx) {
   });
   if (!ok) return NextResponse.json({ error: "이미 요약을 시작했어요. 새로고침해 주세요." }, { status: 409 });
 
-  // 응답은 바로 보내고 요약은 이어서 (Docker의 Node 서버에서 계속 실행됨, 서버리스 아님)
-  void summarizeMeeting(m.id);
   return NextResponse.json({ status: "summarizing" }, { status: 202 });
 }

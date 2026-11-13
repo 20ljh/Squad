@@ -1,11 +1,12 @@
 """STT 워커: 웹에서 받아쓸 회의를 가져가 받아쓰기(faster-whisper) + 화자 나누기(pyannote)를 하고 결과를 올림.
+화자 확인이 끝난 회의의 요약(Claude API 호출)도 이 워커가 함 (배포 VM이 있는 홍콩은 Anthropic API 미지원 지역).
 
 실행 (squad 폴더에서, 웹이 켜져 있는 상태):
     workers/stt/.venv/Scripts/python workers/stt/worker.py
     workers/stt/.venv/Scripts/python workers/stt/worker.py --web http://192.168.0.10:3000   # 다른 PC의 웹
     workers/stt/.venv/Scripts/python workers/stt/worker.py --once                          # 하나만 처리하고 끝
 
-필요한 것: apps/web/.env 의 WORKER_TOKEN(웹과 같은 값), HF_TOKEN, ffmpeg, NVIDIA GPU(없으면 --device cpu, 아주 느림)
+필요한 것: apps/web/.env 의 WORKER_TOKEN(웹과 같은 값), HF_TOKEN, ANTHROPIC_API_KEY, ffmpeg, NVIDIA GPU(없으면 --device cpu, 아주 느림)
 
 흐름 (웹 API, CLAUDE.md 4절):
     1) POST /api/worker/claim                 받아쓸 회의 하나 가져가기 (없으면 몇 초 뒤 다시)
@@ -15,6 +16,12 @@
     5) POST /api/worker/jobs/:id/result       화자가 붙은 최종 원문 → 회의는 "화자 확인" 단계로
        실패하면 POST /api/worker/jobs/:id/fail 로 이유를 알림
 사용자가 취소하면 웹이 409 { cancelled: true } 를 돌려주고, 워커는 그 자리에서 멈춤.
+
+요약 (받아쓸 회의가 없을 때 확인):
+    1) POST /api/worker/summary/claim         요약할 회의 + Anthropic에 보낼 요청 본문 (프롬프트는 웹이 만듦)
+    2) POST https://api.anthropic.com/v1/messages   본문을 그대로 보냄
+    3) POST /api/worker/summary/:id/result    받은 글(JSON) → 웹이 검사·저장, 형식이 깨졌으면 422 → 1번만 다시 부름
+       실패하면 POST /api/worker/summary/:id/fail
 
 받아쓰기 설정은 poc.py에서 확정한 것과 같음 (large-v3, 한국어, VAD, 온도 0 고정 → 같은 녹음이면 결과가 같음).
 """
@@ -39,6 +46,61 @@ from poc import SAMPLE_RATE, DIARIZATION_MODEL, Word, assign_speakers, decode_au
 
 # 받아쓴 문장을 모아서 올리는 간격(초). 너무 자주 올리면 웹이 바쁘고, 너무 드물면 화면이 늦게 바뀜
 SEND_EVERY_SEC = 2.0
+
+
+ANTHROPIC_URL = "https://api.anthropic.com/v1/messages"
+
+
+def call_claude(body: dict) -> tuple[int, dict | None]:
+    """Anthropic Messages API 호출. (HTTP 상태, 응답 JSON). 키 값은 출력하지 않음."""
+    req = urllib.request.Request(
+        ANTHROPIC_URL,
+        data=json.dumps(body).encode(),
+        headers={"x-api-key": os.environ.get("ANTHROPIC_API_KEY", ""), "anthropic-version": "2023-06-01", "content-type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=300) as res:
+            return res.status, json.loads(res.read())
+    except urllib.error.HTTPError as e:
+        try:
+            return e.code, json.loads(e.read() or b"null")
+        except json.JSONDecodeError:
+            return e.code, None
+
+
+def summarize(api: "Api", job: dict) -> None:
+    """요약 하나: 웹이 준 요청을 Claude에 보내고 결과를 올림. 형식이 깨지면 1번만 다시."""
+    mid = job["meetingId"]
+    print(f"▶ 요약 {mid}", flush=True)
+    t0 = time.time()
+    for attempt in range(2):
+        try:
+            code, res = call_claude(job["request"])
+        except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
+            print(f"✖ 요약 서비스에 연결하지 못했어요 ({e})", flush=True)
+            api.call("POST", f"/api/worker/summary/{mid}/fail", {"kind": "network"})
+            return
+        if code != 200 or not res:
+            msg = ((res or {}).get("error") or {}).get("message", "")
+            print(f"✖ 요약 실패: Anthropic {code} {msg}", flush=True)
+            api.call("POST", f"/api/worker/summary/{mid}/fail", {"httpStatus": code})
+            return
+        text = "".join(b.get("text", "") for b in res.get("content", []) if b.get("type") == "text")
+        status, data = api.call("POST", f"/api/worker/summary/{mid}/result", {"text": text, "usage": res.get("usage")})
+        if status == 200:
+            u = res.get("usage") or {}
+            print(f"✔ 요약 저장 ({time.time() - t0:.0f}초, 입력 {u.get('input_tokens')} · 출력 {u.get('output_tokens')}토큰)", flush=True)
+            return
+        if status == 409:
+            print("■ 그 사이 상태가 바뀐 회의예요. 이 요약은 버려요.", flush=True)
+            return
+        if status == 422 and attempt == 0:
+            print("  요약 형식이 맞지 않아 한 번 더 시도해요.", flush=True)
+            continue
+        print(f"✖ 요약 저장 실패 ({status}: {(data or {}).get('error')})", flush=True)
+        api.call("POST", f"/api/worker/summary/{mid}/fail", {"kind": "bad_json"})
+        return
 
 
 class Cancelled(Exception):
@@ -193,7 +255,9 @@ def main() -> None:
         sys.exit("WORKER_TOKEN이 없거나 너무 짧아요. apps/web/.env 에 웹과 같은 값을 넣어 주세요.")
     api = Api(args.web, token)
     models = Models(args.model, args.device)
-    print(f"웹 {args.web} 에서 받아쓸 회의를 기다려요 (멈추려면 Ctrl+C)", flush=True)
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        print("※ ANTHROPIC_API_KEY가 없어서 요약은 하지 않아요 (받아쓰기만). apps/web/.env 를 확인해 주세요.", flush=True)
+    print(f"웹 {args.web} 에서 받아쓰기·요약할 회의를 기다려요 (멈추려면 Ctrl+C)", flush=True)
 
     waiting_note = False
     while True:
@@ -206,6 +270,25 @@ def main() -> None:
         if status == 401:
             sys.exit("웹이 워커 키를 거절했어요. apps/web/.env 의 WORKER_TOKEN이 웹과 같은지 확인해 주세요.")
         if status != 200 or not job:
+            # 받아쓸 회의가 없으면 요약할 회의 확인
+            if os.environ.get("ANTHROPIC_API_KEY"):
+                try:
+                    s_status, s_job = api.call("POST", "/api/worker/summary/claim", {})
+                except (urllib.error.URLError, TimeoutError, ConnectionError):
+                    s_status, s_job = 0, None
+                if s_status == 200 and s_job:
+                    waiting_note = False
+                    try:
+                        summarize(api, s_job)
+                    except Exception as e:  # noqa: BLE001
+                        print(f"✖ 요약 중 오류: {e!r}", flush=True)
+                        try:
+                            api.call("POST", f"/api/worker/summary/{s_job['meetingId']}/fail", {"kind": "network"})
+                        except Exception:  # noqa: BLE001
+                            pass
+                    if args.once:
+                        return
+                    continue
             if not waiting_note:
                 print("할 일 없음 · 기다리는 중…", flush=True)
                 waiting_note = True

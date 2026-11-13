@@ -1,9 +1,14 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { db } from "../db";
 
 // 회의 요약: 화자 매핑이 끝난 원문을 LLM에 한 번 보내 안건·의견·결정·일정·할 일을 받아 DB에 저장
 // 시험(apps/web/scripts/summarize-poc.ts)에서 정한 대로 Haiku 5.5 + 노력 단계 high + JSON 스키마 강제 (회의 1건 약 7원)
 // 결과는 DB에 저장해 다시 부르지 않음 (CLAUDE.md 11절). 파싱에 실패하면 1번만 다시 시도
+//
+// Anthropic API 호출은 웹 서버가 아니라 개발 PC의 워커가 함 (2026-11-13: 배포 VM이 있는 홍콩은 Anthropic API 미지원 지역)
+//   1) 워커가 /api/worker/summary/claim 으로 summaryRequest()가 만든 요청 본문을 받아
+//   2) Anthropic Messages API에 그대로 보내고
+//   3) 받은 글을 /api/worker/summary/:id/result 로 올리면 saveSummary()가 검사·저장
+// 프롬프트·스키마·저장 규칙은 모두 이 파일 한 곳에 둠 (워커는 전달만)
 
 const MODEL = process.env.LLM_MODEL ?? "claude-haiku-5-5";
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
@@ -140,30 +145,8 @@ function cut(s: string, n: number): string {
   return chars.length <= n ? chars.join("") : chars.slice(0, n).join("");
 }
 
-async function callLlm(userText: string): Promise<{ result: Result; usage: Anthropic.Usage }> {
-  const client = new Anthropic();
-  let lastError: unknown;
-  for (let attempt = 0; attempt < 2; attempt++) {
-    const res = await client.messages.create({
-      model: MODEL,
-      max_tokens: 16000,
-      system: SYSTEM,
-      messages: [{ role: "user", content: userText }],
-      output_config: { format: { type: "json_schema", schema: SCHEMA }, effort: "high" },
-    });
-    const text = res.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("");
-    try {
-      return { result: JSON.parse(text) as Result, usage: res.usage };
-    } catch (err) {
-      lastError = err; // 형식이 깨졌으면 1번만 다시
-    }
-  }
-  throw new Error(`요약 결과를 읽지 못했어요: ${String(lastError)}`);
-}
-
-/** 회의 하나를 요약해 저장하고 상태를 done으로. 실패하면 화자 확인 단계로 되돌리고 이유를 남김 */
-export async function summarizeMeeting(meetingId: string): Promise<void> {
-  const m = await db.meeting.findUniqueOrThrow({
+async function loadMeeting(meetingId: string) {
+  return db.meeting.findUnique({
     where: { id: meetingId },
     include: {
       project: { include: { members: true } },
@@ -171,27 +154,65 @@ export async function summarizeMeeting(meetingId: string): Promise<void> {
       segments: { orderBy: { startSec: "asc" } },
     },
   });
-  if (m.status !== "summarizing") return;
+}
 
+type LoadedMeeting = NonNullable<Awaited<ReturnType<typeof loadMeeting>>>;
+
+/** 원문 속 이름: 매핑된 화자는 팀원 이름, 모르는 화자는 "화자1" 그대로 */
+function namer(m: LoadedMeeting) {
   const memberById = Object.fromEntries(m.project.members.map((x) => [x.id, x]));
   const labelById = Object.fromEntries(m.speakerLabels.map((l) => [l.id, l]));
-  // 원문 속 이름: 매핑된 화자는 팀원 이름, 모르는 화자는 "화자1" 그대로
-  const nameOfLabel = (labelId: string | null) => {
+  return (labelId: string | null) => {
     const l = labelId ? labelById[labelId] : undefined;
     if (!l) return "알 수 없음";
     return (l.memberId && memberById[l.memberId]?.name) || l.label;
   };
+}
+
+/** 워커가 Anthropic Messages API에 그대로 보낼 요청 본문. 요약할 회의가 아니면 null */
+export async function summaryRequest(meetingId: string): Promise<Record<string, unknown> | null> {
+  const m = await loadMeeting(meetingId);
+  if (!m || m.status !== "summarizing") return null;
+  const nameOfLabel = namer(m);
   const transcript = m.segments.map((s) => `[${clock(s.startSec)}] ${nameOfLabel(s.speakerLabelId)}: ${s.text}`).join("\n");
   const date = kstIso(m.startedAt);
   const [y, mo, d] = date.split("-").map(Number);
   const weekday = WEEKDAYS[new Date(Date.UTC(y, mo - 1, d)).getUTCDay()];
   const names = [...new Set(m.segments.map((s) => nameOfLabel(s.speakerLabelId)))];
   const userText = `meetingDate: ${date} (${weekday}요일)\n참석자: ${names.join(", ")}\n\n<transcript>\n${transcript}\n</transcript>`;
+  return {
+    model: MODEL,
+    max_tokens: 16000,
+    system: SYSTEM,
+    messages: [{ role: "user", content: userText }],
+    output_config: { format: { type: "json_schema", schema: SCHEMA }, effort: "high" },
+  };
+}
+
+/** 요약 실패: 화자 확인 단계로 되돌리고 이유를 남김 (사용자가 다시 확정하면 다시 요약) */
+export async function failSummary(meetingId: string, reason: string): Promise<void> {
+  await db.meeting.updateMany({ where: { id: meetingId, status: "summarizing" }, data: { status: "mapping", failReason: reason, summaryStartedAt: null } });
+}
+
+/**
+ * 워커가 받아 온 모델 응답 글(JSON)을 검사해 저장하고 상태를 done으로.
+ * "bad_json"이면 워커가 1번만 다시 부름. "gone"이면 그 사이 상태가 바뀐 회의
+ */
+export async function saveSummary(meetingId: string, text: string): Promise<"saved" | "bad_json" | "gone"> {
+  let result: Result;
+  try {
+    result = JSON.parse(text) as Result;
+  } catch {
+    return "bad_json";
+  }
+  if (typeof result?.summary !== "string" || !Array.isArray(result.agenda) || !Array.isArray(result.actionItems) || !Array.isArray(result.schedules)) {
+    return "bad_json";
+  }
+  const m = await loadMeeting(meetingId);
+  if (!m || m.status !== "summarizing") return "gone";
+  const nameOfLabel = namer(m);
 
   try {
-    const { result, usage } = await callLlm(userText);
-    console.log(`요약 완료 ${meetingId}: 입력 ${usage.input_tokens} · 출력 ${usage.output_tokens}토큰`);
-
     // 이름 → 팀원 / 화자 라벨
     const memberByName = Object.fromEntries(m.project.members.map((x) => [x.name, x.id]));
     const labelByName: Record<string, string> = {};
@@ -206,7 +227,7 @@ export async function summarizeMeeting(meetingId: string): Promise<void> {
       const still = await tx.meeting.updateMany({
         where: { id: meetingId, status: "summarizing" },
         // 제목은 만들 때 정한 "n차 회의 결과" 그대로
-        data: { status: "done", summary: result.summary, failReason: null },
+        data: { status: "done", summary: result.summary, failReason: null, summaryStartedAt: null },
       });
       if (still.count === 0) return;
       await tx.agendaItem.deleteMany({ where: { meetingId } });
@@ -257,12 +278,10 @@ export async function summarizeMeeting(meetingId: string): Promise<void> {
         })),
       });
     });
+    return "saved";
   } catch (err) {
-    console.error("요약 실패", meetingId, err);
-    const reason =
-      err instanceof Anthropic.APIError
-        ? `요약 서비스에 연결하지 못했어요(${err.status ?? "연결 오류"}). 잠시 뒤 다시 시도해 주세요.`
-        : "요약하지 못했어요. 잠시 뒤 다시 시도해 주세요.";
-    await db.meeting.updateMany({ where: { id: meetingId, status: "summarizing" }, data: { status: "mapping", failReason: reason } });
+    // 모양은 맞지만 값이 이상한 경우 등 → 형식 오류로 보고 워커가 1번 더 시도
+    console.error("요약 저장 실패", meetingId, err);
+    return "bad_json";
   }
 }

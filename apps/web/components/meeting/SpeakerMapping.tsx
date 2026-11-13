@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Meeting } from "@/lib/types";
 
 // 화자 확인: "화자1·화자2…"가 어떤 팀원인지 고르고 요약 시작
@@ -29,6 +29,12 @@ export function SpeakerMapping({ meetingId, data, failReason }: { meetingId: str
   const [error, setError] = useState<string | null>(failReason ?? null);
   const [saving, setSaving] = useState(false);
 
+  // 요약이 실패해 화자 확인으로 돌아오면 같은 화면이 다시 그려짐 → 버튼을 풀고 실패 이유를 보여 줌
+  useEffect(() => {
+    setSaving(false);
+    if (failReason) setError(failReason);
+  }, [failReason]);
+
   const missing = data.speakers.filter((s) => !choice[s.id]);
   const used = Object.values(choice).filter((v) => v !== UNKNOWN);
   const dup = used.filter((v, i) => used.indexOf(v) !== i);
@@ -54,6 +60,8 @@ export function SpeakerMapping({ meetingId, data, failReason }: { meetingId: str
         return;
       }
       router.refresh();
+      // 정상이면 "요약 중" 화면으로 바뀌어 이 버튼은 사라짐. 그대로 남아 있으면 다시 누를 수 있게
+      window.setTimeout(() => setSaving(false), 4000);
     } catch {
       setError("서버에 연결하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");
       setSaving(false);
