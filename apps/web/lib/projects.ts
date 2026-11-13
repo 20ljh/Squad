@@ -58,19 +58,25 @@ export function parseNewProject(body: unknown): { ok: true; value: NewProjectInp
   return { ok: true, value: { name, course, leader, members, deadline } };
 }
 
-/** 프로젝트를 만들고 팀장을 첫 팀원으로 넣음. 초대 코드는 HMAC만 저장 (원문은 참여 기능에서 보여 줌) */
-export async function createProject(input: NewProjectInput): Promise<{ id: string }> {
+export function memberColor(i: number): string {
+  return MEMBER_COLORS[i % MEMBER_COLORS.length];
+}
+
+/** 프로젝트를 만들고 로그인한 사용자를 팀장(첫 팀원)으로 연결. 초대 코드는 HMAC만 저장하고 원문은 돌려줌(한 번만 보여 줌) */
+export async function createProject(input: NewProjectInput, userId: string): Promise<{ id: string; inviteCode: string }> {
   const names = [input.leader, ...input.members];
+  const inviteCode = newInviteCode();
   const project = await db.project.create({
     data: {
       name: input.name,
       course: input.course || null,
       deadline: input.deadline ? new Date(`${input.deadline}T00:00:00+09:00`) : null,
-      inviteCodeHash: inviteCodeHash(newInviteCode()),
+      inviteCodeHash: inviteCodeHash(inviteCode),
       inviteCodeIssuedAt: new Date(),
       members: {
         create: names.map((n, i) => ({
           name: n,
+          userId: i === 0 ? userId : null,
           role: i === 0 ? "leader" : "member",
           position: i === 0 ? "팀장" : "",
           initial: [...n][0] ?? "?",
@@ -81,7 +87,7 @@ export async function createProject(input: NewProjectInput): Promise<{ id: strin
     },
     select: { id: true },
   });
-  return project;
+  return { id: project.id, inviteCode };
 }
 
 export type MeetingStatus = "draft" | "transcribing" | "mapping" | "summarizing" | "done" | "failed";

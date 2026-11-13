@@ -1,0 +1,66 @@
+# 운영 배포 (Azure VM의 /opt/squad 에서 실행). 같은 파일로 다른 VM(학교 VM 등)에도 올릴 수 있음
+#   web    : Next.js (이미지 squad-web, 이 PC에서 빌드해 올림)
+#   db     : PostgreSQL 17 (밖으로 열지 않음. 시드·점검은 SSH 터널로 127.0.0.1:5432)
+#   nginx  : 80/443, HTTPS 종료 후 web으로 전달
+#   certbot: Let's Encrypt 인증서 발급·갱신 (12시간마다 확인)
+# STT 워커는 GPU가 있는 개발 PC에서 돌고 웹 API(/api/worker/*)로 붙음 (CLAUDE.md 13절)
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: squad
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD를 .env에 넣어 주세요}
+      POSTGRES_DB: squad
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U squad"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  web:
+    image: squad-web:latest
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://squad:${POSTGRES_PASSWORD}@db:5432/squad
+      APP_URL: https://${DOMAIN}
+      AUDIO_DIR: /data/audio
+    volumes:
+      - audio:/data/audio
+    depends_on:
+      db:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+    depends_on:
+      - web
+    # 갱신된 인증서를 읽도록 6시간마다 설정 다시 읽기
+    command: ["/bin/sh", "-c", "while :; do sleep 6h; nginx -s reload; done & exec /docker-entrypoint.sh nginx -g 'daemon off;'"]
+
+  certbot:
+    image: certbot/certbot:v3.0.1
+    restart: unless-stopped
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: ["/bin/sh", "-c", "trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done"]
+
+volumes:
+  db-data:
+  audio:

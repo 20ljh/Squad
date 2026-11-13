@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireMeetingApi } from "@/lib/auth/access";
 import { db } from "@/lib/db";
 import { summarizeMeeting } from "@/lib/llm/summarize";
 
@@ -7,8 +8,10 @@ type Ctx = { params: { id: string } };
 // POST /api/meetings/:id/speakers — 화자 ↔ 팀원 매핑 확정 후 요약 시작
 // 본문: { mapping: { [speakerLabelId]: memberId | null } }  null = 모르겠음("화자1"로 남김)
 // 저장하면 상태가 summarizing 이 되고, 요약(LLM 1회)은 응답을 보낸 뒤 서버에서 이어서 진행 → 회의 페이지가 몇 초마다 확인
-// 로그인 전(11/16 제출본)이라 팀원 확인은 없음. 로그인을 붙이면 세션 사용자가 이 프로젝트 팀원인지 확인할 것
+// 로그인한 이 프로젝트 팀원만 (lib/auth/access.ts)
 export async function POST(request: Request, { params }: Ctx) {
+  const auth = await requireMeetingApi(params.id);
+  if (!auth.ok) return auth.response;
   let body: Record<string, unknown>;
   try {
     body = (await request.json()) as Record<string, unknown>;

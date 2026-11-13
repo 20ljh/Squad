@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-// 초대 코드는 영문·숫자·하이픈만 (예: SQD-7K4P). 실제 존재 여부는 참여 요청 화면(/join/[code])에서 확인
+// 초대 코드는 영문·숫자·하이픈만 (예: SQD-7K4P-2MXQ). 실제 존재 여부는 참여 요청 화면(/join/[code])에서 확인
 const CODE_PATTERN = /^[A-Z0-9-]{4,20}$/;
 
 export function InviteCodeForm() {
@@ -37,7 +37,7 @@ export function InviteCodeForm() {
           autoComplete="off"
           autoCapitalize="characters"
           spellCheck={false}
-          placeholder="예: SQD-7K4P"
+          placeholder="예: SQD-7K4P-2MXQ"
           value={code}
           onChange={(e) => setCode(e.target.value)}
           aria-describedby="invite-code-error"

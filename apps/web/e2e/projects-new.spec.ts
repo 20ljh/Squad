@@ -4,6 +4,9 @@ import { expect, test } from "@playwright/test";
 test.describe("프로젝트 만들기 · 기본 설정", () => {
   test("필수 칸을 비우고 만들면 칸마다 안내가 보인다", async ({ page }) => {
     await page.goto("/projects/new");
+    // 내 이름은 구글 이름으로 미리 채워짐 → 지우고 확인
+    await expect(page.getByLabel(/내 이름/)).toHaveValue("이주형");
+    await page.getByLabel(/내 이름/).fill("");
     await page.getByRole("button", { name: "프로젝트 만들기" }).click();
     await expect(page.getByText("프로젝트 이름을 입력해 주세요.")).toBeVisible();
     await expect(page.getByText("팀장인 내 이름을 입력해 주세요.")).toBeVisible();
@@ -24,7 +27,7 @@ test.describe("프로젝트 만들기 · 기본 설정", () => {
     await expect(page.getByRole("button", { name: "지현 빼기" })).toHaveCount(0);
   });
 
-  test("필수 칸을 채우고 만들면 DB에 저장되고 팀 대시보드로 이동한다", async ({ page }) => {
+  test("필수 칸을 채우고 만들면 DB에 저장되고, 초대 코드를 보여 준 뒤 팀 대시보드로 이동한다", async ({ page }) => {
     await page.goto("/projects/new");
     // 실제로 DB에 저장됨. "e2e "로 시작하는 프로젝트는 npm run db:seed 가 지움
     await page.getByLabel(/프로젝트 이름/).fill("e2e 시험 프로젝트");
@@ -37,6 +40,11 @@ test.describe("프로젝트 만들기 · 기본 설정", () => {
     await page.getByLabel(/최종 마감일/).fill(iso);
     await page.getByRole("button", { name: "프로젝트 만들기" }).click();
 
+    // 초대 링크·코드 공유 (코드 원문은 여기서 한 번만)
+    await expect(page.getByRole("heading", { name: "프로젝트를 만들었어요" })).toBeVisible();
+    await expect(page.getByText(/^SQD-[A-Z0-9]{4}-[A-Z0-9]{4}$/)).toBeVisible();
+    await page.getByRole("button", { name: "팀 대시보드로 가기" }).click();
+
     // 만든 프로젝트의 팀 대시보드로 이동: 예시 대시보드와 같은 구성, 숫자는 0·목록은 빈 상태
     await expect(page).toHaveURL(/\/p\/[a-z0-9]+$/);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("프로젝트 진행 현황");
@@ -46,6 +54,9 @@ test.describe("프로젝트 만들기 · 기본 설정", () => {
     await expect(page.getByText("0회", { exact: true })).toBeVisible();
     await expect(page.getByText("하은", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "회의 기록 추가" })).toBeVisible();
+    // 팀장 도구
+    await expect(page.getByRole("button", { name: "팀원 초대" })).toBeVisible();
+    await expect(page.getByText("아직 Notion이 연결되지 않았어요")).toBeVisible();
   });
 
   test("지난 날짜를 최종 마감일로 고르면 안내가 보인다", async ({ page }) => {

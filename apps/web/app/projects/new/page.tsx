@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { SiteHeader } from "@/components/ui/SiteHeader";
 import { ProjectNewForm, SafetyNote } from "@/components/projects/ProjectNewForm";
 import { pageTitle } from "@/lib/brand";
+import { getCurrentUser } from "@/lib/auth/session";
+import { redirect } from "next/navigation";
+import { loginPath } from "@/lib/auth/access";
 
 export const metadata: Metadata = { title: pageTitle("새 프로젝트 만들기") };
 
@@ -31,7 +34,10 @@ function StepList() {
   );
 }
 
-export default function ProjectNewPage() {
+export default async function ProjectNewPage() {
+  // 프로젝트 만들기는 로그인 후에 (만든 사람이 팀장으로 연결됨)
+  const user = await getCurrentUser();
+  if (!user) redirect(loginPath("/projects/new"));
   return (
     <div className="min-h-screen break-keep bg-surface-alt [overflow-wrap:anywhere]">
       <SiteHeader context="프로젝트 만들기" nav={{ href: "/", label: "메인으로", icon: "back" }} />
@@ -44,7 +50,7 @@ export default function ProjectNewPage() {
 
         <div className="flex flex-wrap items-start gap-6 md:gap-8">
           <div className="min-w-0 flex-[999_1_560px]">
-            <ProjectNewForm />
+            <ProjectNewForm defaultLeader={user.name} />
           </div>
 
           {/* 만든 다음 과정 + 보안 안내 (PC). 모바일은 폼 안에 보안 안내만 */}

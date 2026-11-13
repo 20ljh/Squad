@@ -4,6 +4,7 @@ import { Readable } from "node:stream";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { audioFilePath } from "@/lib/audio-store";
+import { isPublicProject, requireProjectApi } from "@/lib/auth/access";
 
 type Ctx = { params: { id: string } };
 
@@ -20,9 +21,13 @@ const MIME: Record<string, string> = {
 
 // GET /api/meetings/:id/audio/file — 결과 페이지의 녹음 다시 듣기
 // 브라우저가 원하는 구간만 받을 수 있게 Range 요청을 지원 (원문 줄을 눌러 시간 이동할 때 처음부터 받지 않음)
-// 로그인 전(11/16 제출본)이라 팀원 확인은 없음. 로그인을 붙이면 세션 사용자가 이 프로젝트 팀원인지 확인할 것 (claude/DB.md 5절)
+// 로그인한 이 프로젝트 팀원만. 예시 프로젝트(rec-test)의 녹음은 누구나 들을 수 있음 (lib/auth/access.ts)
 export async function GET(request: Request, { params }: Ctx) {
-  const m = await db.meeting.findUnique({ where: { id: params.id }, select: { audioPath: true } });
+  const m = await db.meeting.findUnique({ where: { id: params.id }, select: { audioPath: true, projectId: true } });
+  if (m && !isPublicProject(m.projectId)) {
+    const auth = await requireProjectApi(m.projectId);
+    if (!auth.ok) return auth.response;
+  }
   if (!m?.audioPath) return NextResponse.json({ error: "녹음이 없어요." }, { status: 404 });
 
   let file: string;

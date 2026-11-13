@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BRAND } from "@/lib/brand";
 import { LogoMark } from "./Logo";
+import { getCurrentUser } from "@/lib/auth/session";
 
 type Props = {
   /** 로고 오른쪽 라벨 (메인 화면처럼 없으면 생략) */
@@ -32,7 +33,8 @@ function NavIcon({ kind }: { kind: "grid" | "back" }) {
   );
 }
 
-export function SiteHeader({ context, nav }: Props) {
+export async function SiteHeader({ context, nav }: Props) {
+  const user = await getCurrentUser();
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-white">
       <div className="mx-auto flex max-w-page items-center gap-2.5 px-4 py-2.5 sm:px-8">
@@ -62,6 +64,29 @@ export function SiteHeader({ context, nav }: Props) {
             )}
           </Link>
         ) : null}
+        {/* 로그인 상태: 이름(넓은 화면) + 로그아웃 / 로그인 전: 로그인 링크 */}
+        <div className={`flex items-center gap-2 ${nav ? "" : "ml-auto"}`}>
+          {user ? (
+            <form action="/api/auth/logout" method="post" className="flex items-center gap-2">
+              <span className="hidden max-w-[160px] truncate text-[13px] text-ink-soft md:inline" title={user.email}>
+                {user.name}
+              </span>
+              <button
+                type="submit"
+                className="min-h-11 rounded-full px-3 text-[13px] font-semibold text-ink-soft transition-colors duration-150 hover:text-accent-strong"
+              >
+                로그아웃
+              </button>
+            </form>
+          ) : (
+            <Link
+              href="/login"
+              className="inline-flex min-h-11 items-center rounded-full px-3 text-[13px] font-semibold text-ink-soft no-underline transition-colors duration-150 hover:text-accent-strong"
+            >
+              로그인
+            </Link>
+          )}
+        </div>
       </div>
     </header>
   );

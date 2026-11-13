@@ -126,6 +126,7 @@ async function main() {
   const e2eAudio = await db.meeting.findMany({ where: { project: { name: { startsWith: "e2e " } }, audioPath: { not: null } }, select: { audioPath: true } });
   for (const m of e2eAudio) await deleteAudio(m.audioPath);
   await db.project.deleteMany({ where: { name: { startsWith: "e2e " } } });
+  await db.user.deleteMany({ where: { googleSub: { startsWith: "e2e-" } } }); // e2e 시험용 로그인 사용자
 
   const sampleIds = await createProject(SAMPLE_PROJECT_ID, "마켓세이프", "캡스톤 프로젝트팀", sampleMeeting, "");
   await createMeeting(sampleMeeting, {

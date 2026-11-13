@@ -2,7 +2,9 @@
 // 바꾼 뒤: npm run db:migrate -- --name <변경이름>
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  // 이 PC(Windows)와 배포 이미지(Debian, OpenSSL 3)에서 모두 돌도록
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -41,7 +43,11 @@ model Project {
   inviteCodeHash     String        @unique // 초대 코드 원문은 저장하지 않음. HMAC-SHA256(서버 비밀값 AUTH_SECRET, 코드)만 저장해 DB가 새도 되돌릴 수 없게
   inviteCodeIssuedAt DateTime
   deadline           DateTime? // 최종 마감일(최종 발표·제출일). 대시보드에 "최종 마감까지 D-n"으로 표시
-  notionPageId       String?
+  notionPageId       String? // 회의를 내보낼 Notion 상위 페이지 (팀장이 연결 후 고름)
+  notionPageTitle    String? // 고른 페이지 제목 (화면 표시용)
+  notionTokenEnc     Bytes? // Notion 공개 연동(OAuth) 토큰. 다시 꺼내 써야 해서 해시 대신 AES-256-GCM 암호화 (lib/crypto.ts)
+  notionWorkspace    String? // 연결한 Notion 워크스페이스 이름 (화면 표시용)
+  notionConnectedAt  DateTime?
   createdAt          DateTime      @default(now())
   members            Member[]
   meetings           Meeting[]

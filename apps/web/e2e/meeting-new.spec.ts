@@ -40,6 +40,7 @@ test("회의 기록 추가 → 녹음 올리기 → 받아쓰는 중", async ({ 
     await page.getByLabel(/팀원 이름/).press("Enter");
   }
   await page.getByRole("button", { name: "프로젝트 만들기" }).click();
+  await page.getByRole("button", { name: "팀 대시보드로 가기" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("프로젝트 진행 현황");
 
   await page.getByRole("button", { name: "회의 기록 추가" }).click();
@@ -93,8 +94,9 @@ test("회의 기록 추가 → 녹음 올리기 → 받아쓰는 중", async ({ 
   await expect(page.getByText("1회차 회의 진행")).toBeVisible();
 });
 
-test("정리 완료된 회의는 취소할 수 없다", async ({ request }) => {
-  expect((await request.post("/api/meetings/m3/cancel")).status()).toBe(409);
+test("팀원이 아니면 예시 회의도 바꿀 수 없다 (취소·녹음 올리기)", async ({ request }) => {
+  // 예시 프로젝트는 보기만 가능. 시험 사용자는 팀원이 아니라 404
+  expect((await request.post("/api/meetings/m3/cancel")).status()).toBe(404);
 });
 
 test("워커 API는 비밀 키가 있어야 하고, 지금 녹음이 아닌 작업은 거절한다", async ({ request }) => {
@@ -108,6 +110,6 @@ test("워커 API는 비밀 키가 있어야 하고, 지금 녹음이 아닌 작�
 
 test("음성이 아닌 파일은 올릴 수 없다", async ({ request }) => {
   const res = await request.post("/api/meetings/m3/audio", { multipart: { audio: { name: "a.txt", mimeType: "text/plain", buffer: Buffer.from("x") } } });
-  // 예시 회의는 이미 정리 완료라 409, 형식 검사보다 상태 검사가 먼저
-  expect(res.status()).toBe(409);
+  // 예시 회의는 팀원만 바꿀 수 있어서 형식 검사 전에 404
+  expect(res.status()).toBe(404);
 });

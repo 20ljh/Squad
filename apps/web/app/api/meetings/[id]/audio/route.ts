@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireMeetingApi } from "@/lib/auth/access";
 import { db } from "@/lib/db";
 import { AUDIO_EXTS, MAX_AUDIO_BYTES, audioExt, deleteAudio, saveAudio } from "@/lib/audio-store";
 
@@ -6,8 +7,10 @@ type Ctx = { params: { id: string } };
 
 // POST /api/meetings/:id/audio — 회의 녹음 올리기 (multipart, 칸 이름 "audio")
 // 저장하면 상태가 transcribing 이 되고, STT 워커가 /api/worker/claim 으로 가져감
-// 로그인 전(11/16 제출본)이라 팀원 확인은 없음. 로그인을 붙이면 세션 사용자가 이 프로젝트 팀원인지 확인할 것
+// 로그인한 이 프로젝트 팀원만 (lib/auth/access.ts)
 export async function POST(request: Request, { params }: Ctx) {
+  const auth = await requireMeetingApi(params.id);
+  if (!auth.ok) return auth.response;
   const meeting = await db.meeting.findUnique({ where: { id: params.id }, select: { id: true, projectId: true, status: true, audioPath: true } });
   if (!meeting) return NextResponse.json({ error: "회의를 찾을 수 없어요." }, { status: 404 });
   if (meeting.status !== "draft" && meeting.status !== "failed") {

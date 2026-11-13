@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
+import { requireProjectApi } from "@/lib/auth/access";
 import { createMeeting, parseNewMeeting } from "@/lib/meeting-create";
 import { SAMPLE_PROJECT_ID } from "@/lib/paths";
 
 type Ctx = { params: { id: string } };
 
 // POST /api/projects/:id/meetings — 회의 틀 만들기 (녹음은 회의 페이지에서 따로 올림)
-// 로그인 전(11/16 제출본)이라 팀원 확인은 없음. 로그인을 붙이면 세션 사용자가 이 프로젝트 팀원인지 확인할 것
+// 로그인한 이 프로젝트 팀원만 (lib/auth/access.ts)
 export async function POST(request: Request, { params }: Ctx) {
+  const auth = await requireProjectApi(params.id);
+  if (!auth.ok) return auth.response;
   if (params.id === SAMPLE_PROJECT_ID) {
     return NextResponse.json({ error: "예시 프로젝트에는 회의를 추가할 수 없어요. 새 프로젝트를 만들어 주세요." }, { status: 403 });
   }

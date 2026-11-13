@@ -4,9 +4,10 @@ import { InviteCodeForm } from "@/components/home/InviteCodeForm";
 import { MyProjectList } from "@/components/home/MyProjectList";
 import { BRAND } from "@/lib/brand";
 import { getMyProjects } from "@/lib/my-projects";
+import { getCurrentUser } from "@/lib/auth/session";
 import { SAMPLE_PROJECT_ID, projectPath } from "@/lib/paths";
 
-// 메인(/) — 프로젝트 만들기, 초대 코드로 참여, 이 기기의 내 프로젝트
+// 메인(/) — 프로젝트 만들기, 초대 코드로 참여, 내 프로젝트(로그인한 계정 기준)
 // 샘플 프로젝트는 예시 데이터로 동작하는 프로젝트 메인(/p/sample)으로 연결
 // 표현 원칙: 그라데이션·빛나는 그림자 없이 단색 면과 얇은 선으로 정리 (Flat 방향)
 const SAMPLE_HREF = projectPath(SAMPLE_PROJECT_ID);
@@ -70,8 +71,9 @@ function Icon({ name }: { name: IconName | "plus" | "chevron" }) {
   }
 }
 
-export default function HomePage() {
-  const myProjects = getMyProjects();
+export default async function HomePage() {
+  const user = await getCurrentUser();
+  const myProjects = user ? await getMyProjects(user.id) : null;
 
   return (
     <div className="min-h-screen break-keep bg-surface-alt [overflow-wrap:anywhere]">
@@ -102,7 +104,7 @@ export default function HomePage() {
             </div>
           </section>
 
-          {/* 초대 코드 + 이 기기의 내 프로젝트 */}
+          {/* 초대 코드 + 내 프로젝트 */}
           <div className="flex min-w-0 flex-[1_1_400px] flex-col gap-4">
             <section aria-labelledby="join-title" className="flex flex-col gap-3 rounded-lg border border-line bg-white p-5 md:p-6">
               <h2 id="join-title" className="m-0 font-display text-lg font-bold md:text-xl">
@@ -116,7 +118,7 @@ export default function HomePage() {
 
             <section aria-labelledby="my-projects-title" className="flex flex-col gap-3 rounded-lg border border-line bg-white p-5 md:p-6">
               <h2 id="my-projects-title" className="m-0 font-display text-lg font-bold md:text-xl">
-                이 기기의 내 프로젝트
+                내 프로젝트
               </h2>
               <MyProjectList items={myProjects} />
             </section>

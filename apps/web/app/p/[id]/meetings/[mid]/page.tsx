@@ -8,7 +8,10 @@ import { MindMap } from "@/components/meeting/MindMap";
 import { ScheduleList } from "@/components/meeting/ScheduleList";
 import { ExportBar } from "@/components/meeting/ExportBar";
 import { getMeeting } from "@/lib/meetings";
-import { projectPath } from "@/lib/paths";
+import { meetingPath, projectPath } from "@/lib/paths";
+import { canViewProject, isPublicProject, requireProjectPage } from "@/lib/auth/access";
+import { notionStatus } from "@/lib/notion-project";
+import { db } from "@/lib/db";
 import { formatFullDate, memberMap } from "@/lib/format";
 import { pageTitle } from "@/lib/brand";
 import { STATUS_LABEL } from "@/lib/projects";
@@ -20,7 +23,8 @@ import { TranscriptPlayer } from "@/components/meeting/TranscriptPlayer";
 type Params = { params: { id: string; mid: string } };
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
-  const meeting = await getMeeting(params.id, params.mid);
+  // 팀원이 아니면 회의 이름도 알리지 않음
+  const meeting = (await canViewProject(params.id)) ? await getMeeting(params.id, params.mid) : null;
   return { title: pageTitle(meeting ? meeting.title : "회의를 찾을 수 없어요") };
 }
 
@@ -34,6 +38,8 @@ function MetaItem({ label, children }: { label: string; children: React.ReactNod
 }
 
 export default async function MeetingResultPage({ params }: Params) {
+  // 예시 프로젝트는 누구나, 그 밖에는 로그인한 팀원만
+  await requireProjectPage(params.id, meetingPath(params.id, params.mid));
   const meeting = await getMeeting(params.id, params.mid);
   if (!meeting) notFound();
 
@@ -46,6 +52,12 @@ export default async function MeetingResultPage({ params }: Params) {
   // 예시 데이터는 상태가 없음 = 정리 완료. 그 밖에는 녹음 올리기·처리 단계를 보여 줌
   const status = meeting.status ?? "done";
   const done = status === "done";
+  // 내보내기: 예시 프로젝트는 Markdown 복사만. 그 밖에는 팀장이 Notion을 연결하고 페이지를 골랐는지
+  let notion: { ready: boolean; pageTitle: string | null; lastUrl: string | null } | null = null;
+  if (done && !isPublicProject(params.id)) {
+    const [ns, row] = await Promise.all([notionStatus(params.id), db.meeting.findUnique({ where: { id: meeting.id }, select: { notionPageUrl: true } })]);
+    notion = { ready: ns.connected && Boolean(ns.pageId), pageTitle: ns.pageTitle, lastUrl: row?.notionPageUrl ?? null };
+  }
 
   return (
     <div className="min-h-screen break-keep bg-surface-alt [overflow-wrap:anywhere]">
@@ -155,6 +167,7 @@ export default async function MeetingResultPage({ params }: Params) {
 
                 <ExportBar
                   meetingId={meeting.id}
+                  notion={notion}
                   summary={`안건 ${meeting.agenda.length}건 · 결정사항 ${decisionCount}건 · 일정 ${meeting.schedules.length}건이 함께 정리돼요.`}
                 />
               </>

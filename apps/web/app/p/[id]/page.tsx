@@ -10,14 +10,20 @@ import { MeetingSearch } from "@/components/dashboard/MeetingSearch";
 import { getDashboard } from "@/lib/sample-data";
 import { getProjectDashboard } from "@/lib/dashboard";
 import { meetingIdsWithResult } from "@/lib/meetings";
-import { meetingPath } from "@/lib/paths";
+import { meetingPath, projectPath } from "@/lib/paths";
 import { AddMeetingButton } from "@/components/dashboard/AddMeetingButton";
 import { memberMap } from "@/lib/format";
 import { pageTitle } from "@/lib/brand";
 import type { Dashboard } from "@/lib/types";
+import { canViewProject, requireProjectPage } from "@/lib/auth/access";
+import { pendingRequests } from "@/lib/join";
+import { TeamInviteButton } from "@/components/dashboard/TeamInviteButton";
+import { JoinRequestList } from "@/components/dashboard/JoinRequestList";
+import { NotionSettings } from "@/components/dashboard/NotionSettings";
+import { notionStatus } from "@/lib/notion-project";
 
 // Next 14: params는 일반 객체입니다(Next 15부터는 Promise).
-type Params = { params: { id: string } };
+type Params = { params: { id: string }; searchParams?: { notion?: string } };
 
 /** 예시 프로젝트(sample)는 예시 대시보드, 그 밖에는 DB에서 센 대시보드 (회의가 없으면 0·빈 목록) */
 async function loadDashboard(projectId: string): Promise<{ data: Dashboard; sample: boolean } | null> {
@@ -28,12 +34,17 @@ async function loadDashboard(projectId: string): Promise<{ data: Dashboard; samp
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
-  const found = await loadDashboard(params.id);
+  const found = (await canViewProject(params.id)) ? await loadDashboard(params.id) : null;
   return { title: pageTitle(found ? "팀 대시보드" : "프로젝트를 찾을 수 없어요") };
 }
 
 // 프로젝트 메인(/p/[id]) = 팀 대시보드
-export default async function ProjectMainPage({ params }: Params) {
+export default async function ProjectMainPage({ params, searchParams }: Params) {
+  // 예시 프로젝트는 누구나, 그 밖에는 로그인한 팀원만 (아니면 로그인 화면 또는 404)
+  const access = await requireProjectPage(params.id, projectPath(params.id));
+  const isLeader = access?.member.role === "leader";
+  const requests = isLeader ? await pendingRequests(params.id) : [];
+  const notion = isLeader ? await notionStatus(params.id) : null;
   const found = await loadDashboard(params.id);
   if (!found) notFound();
   const { data, sample } = found;
@@ -72,11 +83,23 @@ export default async function ProjectMainPage({ params }: Params) {
         {canAdd ? (
           <section className="flex animate-fade-up flex-wrap items-end justify-between gap-4">
             <div className="flex min-w-0 flex-col gap-2">{heading}</div>
-            <AddMeetingButton projectId={params.id} members={data.members} />
+            <div className="flex flex-wrap gap-2">
+              {isLeader ? <TeamInviteButton projectId={params.id} /> : null}
+              <AddMeetingButton projectId={params.id} members={data.members} />
+            </div>
           </section>
         ) : (
           <section className="flex animate-fade-up flex-col gap-2">{heading}</section>
         )}
+
+        {requests.length > 0 ? (
+          <section aria-labelledby="join-title" className="flex flex-col gap-4">
+            <SectionHeading id="join-title" title={`참여 요청 ${requests.length}건`} description="확인 메시지와 구글 계정을 보고 우리 팀원이 맞으면 수락해 주세요." />
+            <JoinRequestList
+              items={requests.map((r) => ({ id: r.id, message: r.message, createdAt: r.createdAt.toISOString(), userName: r.user.name, userEmail: r.user.email }))}
+            />
+          </section>
+        ) : null}
 
         <section aria-label="핵심 지표" className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
           {data.kpis.map((k) => (
@@ -103,6 +126,13 @@ export default async function ProjectMainPage({ params }: Params) {
           <SectionHeading id="history-title" title="회의 기록과 캐치업 현황" />
           <MeetingHistory rounds={data.rounds} members={data.members} hrefs={meetingHrefs} />
         </section>
+
+        {notion ? (
+          <section id="notion" aria-labelledby="notion-title" className="flex scroll-mt-20 flex-col gap-4">
+            <SectionHeading id="notion-title" title="Notion 연결" description="팀장만 볼 수 있어요. 연결해 두면 팀원 누구나 회의 결과를 Notion으로 내보낼 수 있어요." />
+            <NotionSettings projectId={params.id} status={notion} flash={searchParams?.notion} />
+          </section>
+        ) : null}
 
         <section aria-labelledby="search-title" className="flex flex-col gap-4">
           <SectionHeading

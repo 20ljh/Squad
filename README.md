@@ -39,6 +39,19 @@ workers/stt/.venv/Scripts/python workers/stt/worker.py --web https://웹주소  
 
 회의 페이지에서 녹음을 올리면 워커가 가져가 받아쓴 문장을 실시간으로 보여 주고, 끝나면 "화자 확인" 단계로 넘어갑니다.
 
+## 배포 (Azure VM + Docker Compose)
+
+웹·DB·Nginx(HTTPS)를 VM 한 대에 Docker Compose로 올립니다. 설정 파일은 `infra/`에 있고, 같은 파일로 다른 VM에도 올릴 수 있습니다. 받아쓰기 워커는 GPU가 있는 PC에서 `--web https://배포주소`로 붙습니다.
+
+```bash
+# 처음 한 번: VM에 infra/env.prod.example 을 참고해 /opt/squad/.env 를 만들고
+bash infra/deploy.sh                       # 이 PC에서 이미지를 빌드해 VM으로 보내고 다시 띄움
+ssh <VM> 'sh /opt/squad/init-letsencrypt.sh'   # 처음 한 번 HTTPS 인증서 발급
+bash infra/deploy.sh --config              # 설정 파일만 다시 올릴 때
+```
+
+로그인은 구글 계정으로만 합니다. 구글 OAuth 클라이언트와 Notion 공개 연동의 리디렉션 주소는 `{APP_URL}/api/auth/google/callback`, `{APP_URL}/api/notion/callback`입니다.
+
 ## 검사
 
 ```bash

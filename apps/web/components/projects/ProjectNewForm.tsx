@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { projectPath } from "@/lib/paths";
+import { InviteShare } from "@/components/invite/InviteShare";
 
 // 기본 프로젝트 설정 폼 (/projects/new)
-// 입력 검사 → POST /api/projects 로 저장 → 만든 프로젝트의 팀 대시보드로 이동
+// 입력 검사 → POST /api/projects 로 저장 → 초대 링크·코드 공유 화면 → 만든 프로젝트의 팀 대시보드
 // (복구 코드 팝업은 저장되지 않는 코드를 보여 줘서 2026-11-13에 뺌. 팀장 복구는 구글 로그인으로 해결)
 
 const MAX_MEMBERS = 10;
@@ -81,10 +82,11 @@ function FieldError({ id, message }: { id: string; message?: string }) {
   );
 }
 
-export function ProjectNewForm() {
+export function ProjectNewForm({ defaultLeader = "" }: { defaultLeader?: string }) {
   const [name, setName] = useState("");
   const [course, setCourse] = useState("");
-  const [leader, setLeader] = useState("");
+  const [leader, setLeader] = useState(defaultLeader);
+  const [created, setCreated] = useState<{ id: string; inviteCode: string } | null>(null);
   const [deadline, setDeadline] = useState("");
   const [memberInput, setMemberInput] = useState("");
   const [members, setMembers] = useState<string[]>([]);
@@ -102,13 +104,19 @@ export function ProjectNewForm() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ name, course, leader, members, deadline: deadline || null }),
       });
-      const data = (await res.json().catch(() => ({}))) as { id?: string; error?: string };
-      if (!res.ok || !data.id) {
+      const data = (await res.json().catch(() => ({}))) as { id?: string; inviteCode?: string; error?: string };
+      if (res.status === 401) {
+        window.location.href = `/login?next=${encodeURIComponent("/projects/new")}`;
+        return;
+      }
+      if (!res.ok || !data.id || !data.inviteCode) {
         setNotice(data.error ?? "프로젝트를 만들지 못했어요. 잠시 뒤 다시 시도해 주세요.");
         setSaving(false);
         return;
       }
-      router.push(projectPath(data.id));
+      setCreated({ id: data.id, inviteCode: data.inviteCode });
+      setSaving(false);
+      window.scrollTo({ top: 0 });
     } catch {
       setNotice("서버에 연결하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");
       setSaving(false);
@@ -155,6 +163,27 @@ export function ProjectNewForm() {
     }
     // TODO(참여 기능): 만든 뒤 생성 완료·초대 공유 화면으로 이동
     void createProject();
+  }
+
+  if (created) {
+    return (
+      <section aria-labelledby="created-title" className="flex flex-col gap-6 rounded-lg border border-line bg-white p-5 sm:p-8">
+        <div className="flex flex-col gap-2">
+          <h2 id="created-title" className="m-0 font-display text-[22px] font-bold">
+            프로젝트를 만들었어요
+          </h2>
+          <p className="m-0 text-base leading-[1.6] text-ink-soft">팀원에게 초대 링크나 코드를 보내 주세요.</p>
+        </div>
+        <InviteShare code={created.inviteCode} />
+        <button
+          type="button"
+          onClick={() => router.push(projectPath(created.id))}
+          className="min-h-12 self-start rounded-sm bg-accent-strong px-6 text-base font-bold text-white transition-colors duration-150 hover:bg-accent-deep"
+        >
+          팀 대시보드로 가기
+        </button>
+      </section>
+    );
   }
 
   return (

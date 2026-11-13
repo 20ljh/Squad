@@ -1,0 +1,12 @@
+#cloud-config
+# Azure VM first boot: install Docker + Compose, 2GB swap (ASCII only: az CLI reads this with cp949 on Windows)
+package_update: true
+packages:
+  - docker.io
+  - docker-compose-v2
+runcmd:
+  - systemctl enable --now docker
+  - usermod -aG docker azureuser
+  - fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
+  - echo '/swapfile none swap sw 0 0' >> /etc/fstab
+  - mkdir -p /opt/squad && chown azureuser:azureuser /opt/squad
