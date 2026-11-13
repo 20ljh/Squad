@@ -100,28 +100,33 @@ model VoiceProfile {
 }
 
 model Meeting {
-  id            String          @id @default(cuid())
-  projectId     String
-  project       Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  title         String // "3차 정기회의 결과"
-  shortTitle    String // "3차 회의" (마인드맵 중심 노드)
-  summary       String?         @db.Text // LLM이 쓴 회의 전체 요약 두세 문장
-  startedAt     DateTime
-  endedAt       DateTime?
-  mode          String // "Discord 음성채널", "대면" 등
-  audioPath     String? // 원본 음성 파일 위치. 무작위 이름, 공개 폴더 밖, 팀원만 받을 수 있게
-  audioDeleteAt DateTime? // 원본 음성 삭제 예정일 (요약을 마친 뒤 보관 기간이 지나면 지움)
-  durationSec   Int?
-  speakerCount  Int? // 고른 참석자 수 → pyannote num_speakers
-  status        String          @default("draft") // draft | transcribing | mapping | summarizing | done | failed
-  notionPageUrl String?
-  createdAt     DateTime        @default(now())
-  agendaItems   AgendaItem[]
-  schedules     ScheduleItem[]
-  attendances   Attendance[]
-  speakerLabels SpeakerLabel[]
-  segments      SpeechSegment[]
-  reads         MeetingRead[]
+  id             String          @id @default(cuid())
+  projectId      String
+  project        Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title          String // "3차 정기회의 결과"
+  shortTitle     String // "3차 회의" (마인드맵 중심 노드)
+  summary        String?         @db.Text // LLM이 쓴 회의 전체 요약 두세 문장
+  startedAt      DateTime
+  endedAt        DateTime?
+  mode           String // "Discord 음성채널", "대면" 등
+  audioPath      String? // 원본 음성 파일 위치. 무작위 이름, 공개 폴더 밖, 팀원만 받을 수 있게
+  audioDeleteAt  DateTime? // 원본 음성 삭제 예정일 (요약을 마친 뒤 보관 기간이 지나면 지움)
+  audioName      String? // 사용자가 올린 원래 파일 이름 (화면 표시용. 저장 이름은 audioPath의 무작위 값)
+  audioSize      Int? // 올린 파일 크기(바이트)
+  sttStartedAt   DateTime? // STT 워커가 녹음을 가져간 시각. null이면 아직 대기 중
+  sttHeartbeatAt DateTime? // 워커가 마지막으로 소식을 보낸 시각. 10분 넘게 없으면 다른 워커가 다시 가져감
+  failReason     String? // 처리 실패 이유 (사용자에게 보여 줄 문장)
+  durationSec    Int?
+  speakerCount   Int? // 고른 참석자 수 → pyannote num_speakers
+  status         String          @default("draft") // draft | transcribing | mapping | summarizing | done | failed
+  notionPageUrl  String?
+  createdAt      DateTime        @default(now())
+  agendaItems    AgendaItem[]
+  schedules      ScheduleItem[]
+  attendances    Attendance[]
+  speakerLabels  SpeakerLabel[]
+  segments       SpeechSegment[]
+  reads          MeetingRead[]
 }
 
 model SpeakerLabel {

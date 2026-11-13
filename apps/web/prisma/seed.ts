@@ -8,6 +8,7 @@
  */
 import { createHash, randomBytes } from "node:crypto";
 import { PrismaClient } from "@prisma/client";
+import { deleteAudio } from "../lib/audio-store";
 import { sampleMeeting } from "../lib/sample-data";
 import { sttTestMeeting } from "../lib/sample-stt-meeting";
 import { REC_TEST_PROJECT_ID, SAMPLE_PROJECT_ID } from "../lib/paths";
@@ -121,7 +122,9 @@ async function createProject(id: string, name: string, course: string, v: Meetin
 
 async function main() {
   await db.project.deleteMany({ where: { id: { in: [SAMPLE_PROJECT_ID, REC_TEST_PROJECT_ID] } } });
-  // 화면 점검(e2e)이 만든 시험 프로젝트도 정리
+  // 화면 점검(e2e)이 만든 시험 프로젝트도 정리 (올린 녹음 파일도 함께 지움)
+  const e2eAudio = await db.meeting.findMany({ where: { project: { name: { startsWith: "e2e " } }, audioPath: { not: null } }, select: { audioPath: true } });
+  for (const m of e2eAudio) await deleteAudio(m.audioPath);
   await db.project.deleteMany({ where: { name: { startsWith: "e2e " } } });
 
   const sampleIds = await createProject(SAMPLE_PROJECT_ID, "마켓세이프", "캡스톤 프로젝트팀", sampleMeeting, "");

@@ -11,6 +11,8 @@ import { getMeeting } from "@/lib/meetings";
 import { projectPath } from "@/lib/paths";
 import { formatFullDate, memberMap } from "@/lib/format";
 import { pageTitle } from "@/lib/brand";
+import { STATUS_LABEL } from "@/lib/projects";
+import { MeetingProgress } from "@/components/meeting/MeetingProgress";
 
 // Next 14: params는 일반 객체입니다(Next 15부터는 Promise).
 type Params = { params: { id: string; mid: string } };
@@ -35,8 +37,13 @@ export default async function MeetingResultPage({ params }: Params) {
 
   const byId = memberMap(meeting.members);
   const attendees = meeting.attendeeIds.map((id) => byId[id]).filter(Boolean);
+  // 매핑 전 화자("speaker:…" 임시 팀원)는 팀원 수에 넣지 않음
+  const teamSize = meeting.members.filter((m) => !m.id.startsWith("speaker:")).length;
   const decisionCount = meeting.agenda.filter((a) => a.decision).length;
   const [, mm, dd] = meeting.date.split("-").map(Number);
+  // 예시 데이터는 상태가 없음 = 정리 완료. 그 밖에는 녹음 올리기·처리 단계를 보여 줌
+  const status = meeting.status ?? "done";
+  const done = status === "done";
 
   return (
     <div className="min-h-screen break-keep bg-surface-alt [overflow-wrap:anywhere]">
@@ -50,14 +57,20 @@ export default async function MeetingResultPage({ params }: Params) {
           <div className="flex flex-wrap items-baseline justify-between gap-3">
             <div>
               <p className="mb-2 text-sm font-semibold text-accent-strong">{meeting.teamName}</p>
-              <h1 className="m-0 text-balance font-display text-[clamp(26px,4vw,36px)] font-bold tracking-[-.01em]">{meeting.title}</h1>
+              <h1 className="m-0 text-balance font-display text-[clamp(26px,4vw,36px)] font-bold tracking-[-.01em]">{done ? meeting.title : meeting.shortTitle}</h1>
             </div>
+            {done ? (
             <p className="m-0 flex items-center gap-2 rounded-full bg-accent-soft px-3 py-1.5 text-[13px] font-semibold tabular-nums text-accent-strong">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M5 12.5l4.5 4.5L19 7.5" />
               </svg>
               STT 전사 완료 · {meeting.transcriptDuration}
             </p>
+            ) : (
+              <p className={`m-0 rounded-full px-3 py-1.5 text-[13px] font-semibold ${status === "failed" ? "bg-warn-soft text-warn" : "border border-line bg-white text-ink-soft"}`}>
+                {STATUS_LABEL[status]}
+              </p>
+            )}
           </div>
 
           <dl className="m-0 grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-4 rounded-lg border border-line bg-white p-5">
@@ -68,7 +81,7 @@ export default async function MeetingResultPage({ params }: Params) {
               <span className="font-display tabular-nums">{meeting.timeRange}</span>
             </MetaItem>
             <MetaItem label="방식">{meeting.mode}</MetaItem>
-            <MetaItem label={`참석 (${attendees.length}/${meeting.members.length})`}>
+            <MetaItem label={`참석 (${attendees.length}/${teamSize})`}>
               <span className="flex gap-1.5">
                 {attendees.map((m) => (
                   <Avatar key={m.id} member={m} />
@@ -78,6 +91,10 @@ export default async function MeetingResultPage({ params }: Params) {
           </dl>
         </section>
 
+        {!done ? <MeetingProgress meetingId={meeting.id} status={status} speakerCount={meeting.speakerCount} processing={meeting.processing} failReason={meeting.failReason} mapping={meeting.mapping} /> : null}
+
+        {done ? (
+          <>
         <section id="summary" aria-labelledby="summary-title" className="flex scroll-mt-20 flex-col gap-4">
           <SectionHeading id="summary-title" title="안건별 논의와 결정" />
           {meeting.agenda.map((item) => (
@@ -115,6 +132,8 @@ export default async function MeetingResultPage({ params }: Params) {
           meetingId={meeting.id}
           summary={`안건 ${meeting.agenda.length}건 · 결정사항 ${decisionCount}건 · 일정 ${meeting.schedules.length}건이 함께 정리돼요.`}
         />
+          </>
+        ) : null}
       </main>
     </div>
   );

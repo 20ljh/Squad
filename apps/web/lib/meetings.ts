@@ -39,7 +39,30 @@ function duration(sec: number | null): string {
 
 function timeRange(startedAt: Date, endedAt: Date | null, durationSec: number | null): string {
   if (endedAt) return `${kstTime(startedAt)}–${kstTime(endedAt)}`;
+  // 회의를 만들 때 시간을 비워 두면 0시로 저장됨
+  if (kstTime(startedAt) === "00:00" && !durationSec) return "시간 미정";
   return durationSec ? `${kstTime(startedAt)}부터 약 ${Math.max(1, Math.round(durationSec / 60))}분` : kstTime(startedAt);
+}
+
+type Seg = { startSec: number; endSec: number; text: string; speakerLabelId: string | null };
+
+/** 화자 확인 화면: 화자마다 말한 횟수·시간과 대표 발화(긴 것 3개, 시간 순) */
+function mappingView(labels: { id: string; label: string; memberId: string | null }[], segs: Seg[], candidates: Member[]) {
+  const labelName = Object.fromEntries(labels.map((l) => [l.id, l.label]));
+  const sorted = [...labels].sort((a, b) => Number(a.label.replace(/\D/g, "")) - Number(b.label.replace(/\D/g, "")));
+  return {
+    speakers: sorted.map((l) => {
+      const mine = segs.filter((s) => s.speakerLabelId === l.id);
+      const samples = [...mine]
+        .sort((a, b) => b.text.length - a.text.length)
+        .slice(0, 3)
+        .sort((a, b) => a.startSec - b.startSec)
+        .map((s) => ({ start: s.startSec, text: s.text }));
+      return { id: l.id, label: l.label, memberId: l.memberId, count: mine.length, seconds: Math.round(mine.reduce((t, s) => t + (s.endSec - s.startSec), 0)), samples };
+    }),
+    candidates,
+    transcript: segs.map((s) => ({ start: s.startSec, label: s.speakerLabelId ? labelName[s.speakerLabelId] ?? "" : "", text: s.text })),
+  };
 }
 
 /** 프로젝트·회의가 없으면 null (→ 404) */
@@ -52,6 +75,7 @@ export async function getMeeting(projectId: string, meetingId: string): Promise<
       speakerLabels: { orderBy: { label: "asc" } },
       agendaItems: { orderBy: { order: "asc" }, include: { opinions: { orderBy: { order: "asc" } } } },
       schedules: { orderBy: { order: "asc" } },
+      segments: { orderBy: { startSec: "asc" }, select: { startSec: true, endSec: true, text: true, speakerLabelId: true } },
     },
   });
   if (!m) return null;
@@ -59,7 +83,7 @@ export async function getMeeting(projectId: string, meetingId: string): Promise<
   const members: Member[] = m.project.members.map((p) => ({
     id: p.id,
     name: p.name,
-    role: p.position,
+    role: p.position || "팀원",
     initial: p.initial,
     color: p.color,
   }));
@@ -88,6 +112,20 @@ export async function getMeeting(projectId: string, meetingId: string): Promise<
     date: toKstIso(m.startedAt),
     timeRange: timeRange(m.startedAt, m.endedAt, m.durationSec),
     mode: m.mode,
+    status: (["draft", "transcribing", "mapping", "summarizing", "done", "failed"].includes(m.status) ? m.status : "draft") as Meeting["status"],
+    speakerCount: m.speakerCount ?? undefined,
+    failReason: m.failReason,
+    mapping: m.status === "mapping" ? mappingView(m.speakerLabels, m.segments, members.filter((x) => attendeeIds.includes(x.id))) : undefined,
+    processing:
+      m.status === "transcribing"
+        ? {
+            audioName: m.audioName,
+            audioSize: m.audioSize,
+            durationSec: m.durationSec,
+            started: m.sttStartedAt !== null,
+            lines: m.segments.map((s) => ({ start: s.startSec, text: s.text })),
+          }
+        : undefined,
     transcriptDuration: duration(m.durationSec),
     members,
     attendeeIds,

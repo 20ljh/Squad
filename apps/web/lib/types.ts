@@ -60,6 +60,28 @@ export type Meeting = {
   attendeeIds: string[];
   agenda: AgendaItem[];
   schedules: ScheduleItem[];
+  /** 처리 상태. 없으면 정리 완료(예시 데이터) */
+  status?: "draft" | "transcribing" | "mapping" | "summarizing" | "done" | "failed";
+  /** 참석자 수 = 화자 분리에 쓸 화자 수 */
+  speakerCount?: number;
+  /** 화자 확인 단계 화면용: 화자별 대표 발화와 고를 수 있는 팀원(참석자), 전체 원문 */
+  mapping?: {
+    speakers: { id: string; label: string; memberId: string | null; count: number; seconds: number; samples: { start: number; text: string }[] }[];
+    candidates: Member[];
+    transcript: { start: number; label: string; text: string }[];
+  };
+  /** 처리 실패 이유 (status가 failed일 때, 또는 요약 실패로 화자 확인에 돌아왔을 때) */
+  failReason?: string | null;
+  /** 처리 중(받아쓰는 중) 화면용: 올린 파일과 지금까지 받아쓴 줄 */
+  processing?: {
+    audioName: string | null;
+    audioSize: number | null;
+    /** 녹음 길이(초). 워커가 알려 주기 전엔 null */
+    durationSec: number | null;
+    /** 워커가 녹음을 가져갔는지 */
+    started: boolean;
+    lines: { start: number; text: string }[];
+  };
 };
 
 export type Participation = {

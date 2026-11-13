@@ -26,6 +26,19 @@ npm run dev
 
 회의 결과는 DB(PostgreSQL + Prisma)에서 읽고, 대시보드는 아직 예시 데이터입니다. 로그인, 음성 업로드, Notion 내보내기는 만드는 중입니다.
 
+## 받아쓰기 워커 (STT)
+
+회의 녹음을 받아쓰고 화자를 나누는 Python 워커입니다. NVIDIA GPU가 있는 PC에서 실행하고, 웹 API로 작업을 가져갑니다.
+
+```bash
+# 처음 한 번 (squad 폴더에서): 설치 방법은 workers/stt/requirements.txt 맨 위 참고
+# apps/web/.env 에 HF_TOKEN, WORKER_TOKEN(웹과 같은 값) 필요, ffmpeg 필요
+workers/stt/.venv/Scripts/python workers/stt/worker.py                       # 같은 PC의 웹(localhost:3000)
+workers/stt/.venv/Scripts/python workers/stt/worker.py --web https://웹주소    # 다른 곳의 웹
+```
+
+회의 페이지에서 녹음을 올리면 워커가 가져가 받아쓴 문장을 실시간으로 보여 주고, 끝나면 "화자 확인" 단계로 넘어갑니다.
+
 ## 검사
 
 ```bash

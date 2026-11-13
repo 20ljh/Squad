@@ -45,7 +45,7 @@ test.describe("프로젝트 만들기 · 기본 설정", () => {
     await expect(page.getByText("최종 마감까지 D-30", { exact: true })).toBeVisible();
     await expect(page.getByText("0회", { exact: true })).toBeVisible();
     await expect(page.getByText("하은", { exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: "회의 기록 추가" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "회의 기록 추가" })).toBeVisible();
   });
 
   test("지난 날짜를 최종 마감일로 고르면 안내가 보인다", async ({ page }) => {

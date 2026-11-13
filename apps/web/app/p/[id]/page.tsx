@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/ui/SiteHeader";
 import { SectionHeading } from "@/components/ui/SectionHeading";
@@ -11,7 +10,8 @@ import { MeetingSearch } from "@/components/dashboard/MeetingSearch";
 import { getDashboard } from "@/lib/sample-data";
 import { getProjectDashboard } from "@/lib/dashboard";
 import { meetingIdsWithResult } from "@/lib/meetings";
-import { meetingPath, newMeetingPath } from "@/lib/paths";
+import { meetingPath } from "@/lib/paths";
+import { AddMeetingButton } from "@/components/dashboard/AddMeetingButton";
 import { memberMap } from "@/lib/format";
 import { pageTitle } from "@/lib/brand";
 import type { Dashboard } from "@/lib/types";
@@ -32,14 +32,6 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   return { title: pageTitle(found ? "팀 대시보드" : "프로젝트를 찾을 수 없어요") };
 }
 
-function PlusIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
-      <path d="M12 5v14M5 12h14" />
-    </svg>
-  );
-}
-
 // 프로젝트 메인(/p/[id]) = 팀 대시보드
 export default async function ProjectMainPage({ params }: Params) {
   const found = await loadDashboard(params.id);
@@ -55,7 +47,7 @@ export default async function ProjectMainPage({ params }: Params) {
   }
   const latest = [...data.rounds].reverse().find((r) => meetingHrefs[r.id]);
   // 회의 추가는 DB 프로젝트만 (예시 프로젝트는 보기 전용)
-  const addHref = sample ? undefined : newMeetingPath(params.id);
+  const canAdd = !sample;
 
   const heading = (
     <>
@@ -77,16 +69,10 @@ export default async function ProjectMainPage({ params }: Params) {
       />
 
       <main className="mx-auto flex w-full max-w-page flex-col gap-12 px-5 pb-24 pt-10 sm:px-8">
-        {addHref ? (
+        {canAdd ? (
           <section className="flex animate-fade-up flex-wrap items-end justify-between gap-4">
             <div className="flex min-w-0 flex-col gap-2">{heading}</div>
-            <Link
-              href={addHref}
-              className="inline-flex h-12 items-center gap-2 rounded-sm bg-accent-strong px-6 text-base font-bold text-white no-underline transition-colors duration-150 hover:bg-accent-deep"
-            >
-              <PlusIcon />
-              회의 기록 추가
-            </Link>
+            <AddMeetingButton projectId={params.id} members={data.members} />
           </section>
         ) : (
           <section className="flex animate-fade-up flex-col gap-2">{heading}</section>
