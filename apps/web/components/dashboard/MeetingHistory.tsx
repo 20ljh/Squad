@@ -10,6 +10,13 @@ type Props = {
 };
 
 export function MeetingHistory({ rounds, members, hrefs = {} }: Props) {
+  if (rounds.length === 0) {
+    return (
+      <p className="m-0 rounded-lg border border-line bg-white px-5 py-6 text-center text-[15px] text-ink-soft md:px-6">
+        아직 회의가 없어요. 회의 녹음을 올리면 회의마다 누가 결과를 읽었는지 여기에서 볼 수 있어요.
+      </p>
+    );
+  }
   return (
     <div className="rounded-lg border border-line bg-white px-5 py-1 md:px-6">
       <ul className="m-0 list-none p-0">

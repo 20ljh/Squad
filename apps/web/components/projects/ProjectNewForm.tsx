@@ -1,17 +1,24 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { RecoveryCodeDialog } from "./RecoveryCodeDialog";
-import { SAMPLE_PROJECT_ID, projectPath } from "@/lib/paths";
+import { projectPath } from "@/lib/paths";
 
 // 기본 프로젝트 설정 폼 (/projects/new)
-// 지금은 화면만 있는 예시: 입력 검사까지 하고, 실제 생성(POST /api/projects)은 DB 단계에서 연결.
+// 입력 검사 → 복구 코드 팝업(로그인 전이라 보여 주기만) → POST /api/projects 로 저장 → 만든 프로젝트 메인으로 이동
 
 const MAX_MEMBERS = 10;
 const MAX_NAME = 20;
 
-type Errors = Partial<Record<"name" | "leader" | "member", string>>;
+type Errors = Partial<Record<"name" | "leader" | "member" | "deadline", string>>;
+
+/** 이 기기 기준 오늘 "YYYY-MM-DD" (마감일 달력의 최솟값) */
+function todayIso(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 
 function LockIcon() {
   return (
@@ -78,13 +85,36 @@ export function ProjectNewForm() {
   const [name, setName] = useState("");
   const [course, setCourse] = useState("");
   const [leader, setLeader] = useState("");
+  const [deadline, setDeadline] = useState("");
   const [memberInput, setMemberInput] = useState("");
   const [members, setMembers] = useState<string[]>([]);
   const [errors, setErrors] = useState<Errors>({});
   const [notice, setNotice] = useState<string | null>(null);
-  // 예시 생성이 끝났는지. 실제 생성(DB)이 생기면 만든 프로젝트 주소로 바로 이동
-  const [created, setCreated] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const router = useRouter();
+
+  async function createProject() {
+    setSaving(true);
+    setNotice("프로젝트를 만들고 있어요…");
+    try {
+      const res = await fetch("/api/projects", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name, course, leader, members, deadline: deadline || null }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { id?: string; error?: string };
+      if (!res.ok || !data.id) {
+        setNotice(data.error ?? "프로젝트를 만들지 못했어요. 잠시 뒤 다시 시도해 주세요.");
+        setSaving(false);
+        return;
+      }
+      router.push(projectPath(data.id));
+    } catch {
+      setNotice("서버에 연결하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");
+      setSaving(false);
+    }
+  }
 
   function addMember() {
     const n = memberInput.trim();
@@ -118,10 +148,10 @@ export function ProjectNewForm() {
     const next: Errors = {};
     if (!name.trim()) next.name = "프로젝트 이름을 입력해 주세요.";
     if (!leader.trim()) next.leader = "팀장인 내 이름을 입력해 주세요.";
+    if (deadline && deadline < todayIso()) next.deadline = "최종 마감일은 오늘이거나 이후 날짜로 골라 주세요.";
     setErrors(next);
-    if (next.name || next.leader) {
+    if (next.name || next.leader || next.deadline) {
       setNotice(null);
-      setCreated(false);
       return;
     }
     // 입력이 맞으면 복구 코드 팝업부터 (주의 → 코드 → 확인). 실제 생성은 팝업의 코드 단계에서 일어남
@@ -167,7 +197,7 @@ export function ProjectNewForm() {
         </div>
       </div>
 
-      {/* PC에서 위의 "프로젝트 이름" 칸과 같은 두 칸 격자를 써서 칸 길이를 맞춤 */}
+      {/* PC에서 위의 "프로젝트 이름" 칸과 같은 두 칸 격자: 왼쪽 내 이름, 오른쪽 최종 마감일 */}
       <div className="grid gap-5 md:grid-cols-2">
         <div className="flex flex-col gap-2">
           <Label htmlFor="p-leader" hint="팀장" required>
@@ -186,6 +216,25 @@ export function ProjectNewForm() {
             className={inputClass}
           />
           <FieldError id="p-leader-error" message={errors.leader} />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="p-deadline" hint="선택">
+            최종 마감일
+          </Label>
+          <input
+            id="p-deadline"
+            type="date"
+            min={todayIso()}
+            value={deadline}
+            onChange={(e) => setDeadline(e.target.value)}
+            aria-invalid={errors.deadline ? true : undefined}
+            aria-describedby="p-deadline-help p-deadline-error"
+            className={inputClass}
+          />
+          <FieldError id="p-deadline-error" message={errors.deadline} />
+          <p id="p-deadline-help" className="m-0 text-[13px] leading-[1.6] text-ink-soft">
+            최종 발표·제출일이에요. 팀 대시보드에 남은 날짜(D-day)로 보여 드려요.
+          </p>
         </div>
       </div>
 
@@ -251,21 +300,14 @@ export function ProjectNewForm() {
       <div className="flex flex-col gap-3">
         <p aria-live="polite" className="m-0 rounded-sm bg-accent-soft px-4 py-3 text-sm text-accent-deep empty:hidden">
           {notice}
-          {created ? (
-            <>
-              {" "}
-              <Link href={projectPath(SAMPLE_PROJECT_ID)} className="font-bold text-accent-deep underline underline-offset-2 hover:text-ink">
-                샘플 프로젝트 메인 보기
-              </Link>
-            </>
-          ) : null}
         </p>
         <div className="flex flex-col gap-3 md:flex-row-reverse md:items-center">
           <button
             type="submit"
-            className="flex h-12 shrink-0 items-center justify-center whitespace-nowrap rounded-sm bg-accent-strong px-7 text-base font-bold text-white transition-colors duration-150 hover:bg-accent-deep"
+            disabled={saving}
+            className="flex h-12 shrink-0 items-center justify-center whitespace-nowrap rounded-sm bg-accent-strong px-7 text-base font-bold text-white transition-colors duration-150 hover:bg-accent-deep disabled:opacity-60"
           >
-            프로젝트 만들기
+            {saving ? "만드는 중…" : "프로젝트 만들기"}
           </button>
           <Link
             href="/"
@@ -281,9 +323,8 @@ export function ProjectNewForm() {
         onCancel={() => setDialogOpen(false)}
         onDone={() => {
           setDialogOpen(false);
-          // TODO: 생성 완료·초대 공유 화면으로 이동
-          setNotice("프로젝트를 만들었어요(예시). 다음 단계에서 초대 공유 화면으로 이어져요.");
-          setCreated(true);
+          // TODO(참여 기능): 생성 완료·초대 공유 화면으로 이동
+          void createProject();
         }}
       />
     </form>

@@ -8,7 +8,6 @@ import { MindMap } from "@/components/meeting/MindMap";
 import { ScheduleList } from "@/components/meeting/ScheduleList";
 import { ExportBar } from "@/components/meeting/ExportBar";
 import { getMeeting } from "@/lib/meetings";
-import { getDashboard } from "@/lib/sample-data";
 import { projectPath } from "@/lib/paths";
 import { formatFullDate, memberMap } from "@/lib/format";
 import { pageTitle } from "@/lib/brand";
@@ -43,12 +42,7 @@ export default async function MeetingResultPage({ params }: Params) {
     <div className="min-h-screen break-keep bg-surface-alt [overflow-wrap:anywhere]">
       <SiteHeader
         context="회의 결과 기록"
-        // 대시보드가 있는 프로젝트(지금은 예시 프로젝트)만 대시보드로, 시험 프로젝트는 처음 화면으로 돌아감
-        nav={
-          getDashboard(params.id)
-            ? { href: projectPath(params.id), label: "팀 대시보드", icon: "back" }
-            : { href: "/", label: "처음으로", icon: "back" }
-        }
+        nav={{ href: projectPath(params.id), label: "팀 대시보드", icon: "back" }}
       />
 
       <main className="mx-auto flex w-full max-w-page flex-col gap-12 px-5 pb-24 pt-10 sm:px-8">

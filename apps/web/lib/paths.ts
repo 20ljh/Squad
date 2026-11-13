@@ -13,3 +13,7 @@ export function projectPath(projectId: string): string {
 export function meetingPath(projectId: string, meetingId: string): string {
   return `${projectPath(projectId)}/meetings/${encodeURIComponent(meetingId)}`;
 }
+
+export function newMeetingPath(projectId: string): string {
+  return `${projectPath(projectId)}/meetings/new`;
+}

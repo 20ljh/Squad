@@ -24,10 +24,17 @@ test.describe("프로젝트 만들기 · 기본 설정", () => {
     await expect(page.getByRole("button", { name: "지현 빼기" })).toHaveCount(0);
   });
 
-  test("필수 칸을 채우면 복구 코드 팝업: 주의 → 코드 → 적어 뒀어요 체크 후 확인", async ({ page }) => {
+  test("필수 칸을 채우면 복구 코드 팝업: 주의 → 코드 → 적어 뒀어요 체크 후 확인 → DB에 저장되고 프로젝트 메인으로", async ({ page }) => {
     await page.goto("/projects/new");
-    await page.getByLabel(/프로젝트 이름/).fill("마켓셰이프");
+    // 실제로 DB에 저장됨. "e2e "로 시작하는 프로젝트는 npm run db:seed 가 지움
+    await page.getByLabel(/프로젝트 이름/).fill("e2e 시험 프로젝트");
     await page.getByLabel(/내 이름/).fill("하은");
+    await page.getByLabel(/팀원 이름/).fill("민수");
+    await page.getByLabel(/팀원 이름/).press("Enter");
+    // 최종 마감일: 오늘부터 30일 뒤 → 대시보드 소제목 "최종 마감까지 D-30"
+    const d = new Date(Date.now() + 30 * 86_400_000);
+    const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    await page.getByLabel(/최종 마감일/).fill(iso);
     await page.getByRole("button", { name: "프로젝트 만들기" }).click();
 
     const dialog = page.getByRole("dialog");
@@ -46,11 +53,26 @@ test.describe("프로젝트 만들기 · 기본 설정", () => {
     await dialog.getByLabel("복구 코드를 안전한 곳에 적어 뒀어요").check();
     await done.click();
     await expect(dialog).toBeHidden();
-    await expect(page.getByText(/프로젝트를 만들었어요/)).toBeVisible();
 
-    // 만든 뒤에는 프로젝트 메인으로 이어짐 (지금은 샘플 프로젝트)
-    await page.getByRole("link", { name: "샘플 프로젝트 메인 보기" }).click();
-    await expect(page).toHaveURL("/p/sample");
+    // 만든 프로젝트의 팀 대시보드로 이동: 예시 대시보드와 같은 구성, 숫자는 0·목록은 빈 상태
+    await expect(page).toHaveURL(/\/p\/[a-z0-9]+$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("프로젝트 진행 현황");
+    await expect(page.getByText("e2e 시험 프로젝트", { exact: true })).toBeVisible();
+    // 회의가 없으면 앞부분("n회차 회의 진행")은 빠지고, 가장 가까운 일정(최종 마감)만
+    await expect(page.getByText("최종 마감까지 D-30", { exact: true })).toBeVisible();
+    await expect(page.getByText("0회", { exact: true })).toBeVisible();
+    await expect(page.getByText("하은", { exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "회의 기록 추가" })).toBeVisible();
+  });
+
+  test("지난 날짜를 최종 마감일로 고르면 안내가 보인다", async ({ page }) => {
+    await page.goto("/projects/new");
+    await page.getByLabel(/프로젝트 이름/).fill("마켓셰이프");
+    await page.getByLabel(/내 이름/).fill("하은");
+    await page.getByLabel(/최종 마감일/).fill("2020-01-01");
+    await page.getByRole("button", { name: "프로젝트 만들기" }).click();
+    await expect(page.getByText("최종 마감일은 오늘이거나 이후 날짜로 골라 주세요.")).toBeVisible();
+    await expect(page.getByRole("dialog")).toBeHidden();
   });
 
   test("주의 단계에서는 돌아가기로 취소할 수 있다", async ({ page }) => {

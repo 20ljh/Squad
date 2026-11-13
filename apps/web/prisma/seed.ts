@@ -121,6 +121,8 @@ async function createProject(id: string, name: string, course: string, v: Meetin
 
 async function main() {
   await db.project.deleteMany({ where: { id: { in: [SAMPLE_PROJECT_ID, REC_TEST_PROJECT_ID] } } });
+  // 화면 점검(e2e)이 만든 시험 프로젝트도 정리
+  await db.project.deleteMany({ where: { name: { startsWith: "e2e " } } });
 
   const sampleIds = await createProject(SAMPLE_PROJECT_ID, "마켓세이프", "캡스톤 프로젝트팀", sampleMeeting, "");
   await createMeeting(sampleMeeting, {

@@ -40,6 +40,7 @@ model Project {
   course             String? // "캡스톤 프로젝트팀"
   inviteCodeHash     String        @unique // 초대 코드 원문은 저장하지 않음. HMAC-SHA256(서버 비밀값 AUTH_SECRET, 코드)만 저장해 DB가 새도 되돌릴 수 없게
   inviteCodeIssuedAt DateTime
+  deadline           DateTime? // 최종 마감일(최종 발표·제출일). 대시보드에 "최종 마감까지 D-n"으로 표시
   notionPageId       String?
   createdAt          DateTime      @default(now())
   members            Member[]

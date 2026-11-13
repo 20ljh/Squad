@@ -74,6 +74,8 @@ export type MeetingRound = {
   id: string;
   title: string;
   shortLabel: string;
+  /** 헤더의 "최근 회의" 버튼 문구. 없으면 "{shortLabel} 회의 결과" */
+  resultLabel?: string;
   dateLabel: string;
   attendDone: number;
   attendTotal: number;
@@ -104,5 +106,6 @@ export type Dashboard = {
   participation: Participation[];
   rounds: MeetingRound[];
   highlights: Highlight[];
-  sampleSearch: { question: string; answer: string; linkLabel: string; href: string };
+  /** 회의 기록 검색 예시 (예시 프로젝트만). 없으면 검색 칸이 "회의가 쌓이면" 안내를 보여 줌 */
+  sampleSearch?: { question: string; answer: string; linkLabel: string; href: string };
 };
