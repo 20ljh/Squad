@@ -29,7 +29,7 @@ export async function GET(request: Request) {
     const { accessToken, workspaceName } = await exchangeNotionCode(code);
     await db.project.update({
       where: { id: projectId },
-      data: { notionTokenEnc: encryptSecret(accessToken), notionWorkspace: workspaceName, notionConnectedAt: new Date(), notionPageId: null, notionPageTitle: null },
+      data: { notionTokenEnc: encryptSecret(accessToken), notionWorkspace: workspaceName, notionConnectedAt: new Date(), notionPageId: null, notionPageTitle: null, notionDatabaseId: null },
     });
   } catch (err) {
     console.error("Notion 연결 실패", err);

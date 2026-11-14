@@ -8,14 +8,16 @@ export type NotionStatus = {
   workspace: string | null;
   pageId: string | null;
   pageTitle: string | null;
+  /** 처음 내보낼 때 만든 회의록 데이터베이스 (아직 없으면 null) */
+  databaseId: string | null;
 };
 
 export async function notionStatus(projectId: string): Promise<NotionStatus> {
   const p = await db.project.findUnique({
     where: { id: projectId },
-    select: { notionTokenEnc: true, notionWorkspace: true, notionPageId: true, notionPageTitle: true },
+    select: { notionTokenEnc: true, notionWorkspace: true, notionPageId: true, notionPageTitle: true, notionDatabaseId: true },
   });
-  return { connected: Boolean(p?.notionTokenEnc), workspace: p?.notionWorkspace ?? null, pageId: p?.notionPageId ?? null, pageTitle: p?.notionPageTitle ?? null };
+  return { connected: Boolean(p?.notionTokenEnc), workspace: p?.notionWorkspace ?? null, pageId: p?.notionPageId ?? null, pageTitle: p?.notionPageTitle ?? null, databaseId: p?.notionDatabaseId ?? null };
 }
 
 export async function notionToken(projectId: string): Promise<string | null> {

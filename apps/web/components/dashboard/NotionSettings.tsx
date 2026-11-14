@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { NotionStatus } from "@/lib/notion-project";
+import { BRAND } from "@/lib/brand";
 
 // 팀장에게만 보이는 "Notion 연결" 칸 (대시보드 #notion)
 // 연결 전 → "Notion 연결하기" / 연결 후 페이지를 아직 안 골랐으면 → 페이지 고르기 / 다 됐으면 → 내보낼 곳 표시·바꾸기·연결 끊기
@@ -34,7 +35,8 @@ export function NotionSettings({ projectId, status, flash }: { projectId: string
   const [selected, setSelected] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const note = flash ? FLASH[flash] : undefined;
+  // "연결했어요, 페이지를 골라 주세요" 안내는 페이지를 정한 뒤에는 감춤
+  const note = flash && !(flash === "connected" && status.pageId) ? FLASH[flash] : undefined;
   const api = `/api/projects/${encodeURIComponent(projectId)}/notion`;
 
   async function loadPages() {
@@ -63,6 +65,7 @@ export function NotionSettings({ projectId, status, flash }: { projectId: string
     if (!res?.ok) setError(data?.error ?? "저장하지 못했어요.");
     else {
       setPicking(false);
+      router.replace(`${window.location.pathname}#notion`); // 주소에 남은 ?notion= 안내 지우기
       router.refresh();
     }
     setBusy(false);
@@ -103,7 +106,7 @@ export function NotionSettings({ projectId, status, flash }: { projectId: string
               <p className="m-0 text-[14px] leading-[1.6] text-ink-soft">
                 {status.pageTitle ? (
                   <>
-                    회의록은 <strong className="text-ink">{status.pageTitle}</strong> 페이지 아래에 만들어져요.
+                    회의록은 <strong className="text-ink">{status.pageTitle}</strong> 페이지 안의 &lsquo;{BRAND.name} 회의록&rsquo; 표에 한 줄씩 쌓여요(일시·방식·참석 칸 포함).
                   </>
                 ) : (
                   "회의록을 넣을 페이지를 골라 주세요."

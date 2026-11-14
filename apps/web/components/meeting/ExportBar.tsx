@@ -47,7 +47,7 @@ export function ExportBar({ meetingId, summary, notion }: Props) {
   const notionHint = !notion
     ? "예시 프로젝트는 Markdown 복사만 할 수 있어요."
     : notion.ready
-      ? `${notion.pageTitle ?? "팀 Notion"} 페이지 아래에 회의록을 만들어요.`
+      ? `${notion.pageTitle ?? "팀 Notion"} 페이지의 회의록 표에 한 줄로 넣어요.`
       : "Notion으로 내보내려면 팀장이 팀 대시보드에서 Notion을 연결해 주세요.";
 
   return (

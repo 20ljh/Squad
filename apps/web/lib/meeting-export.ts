@@ -15,7 +15,30 @@ export type ExportBlock = {
   checked?: boolean;
 };
 
-export type ExportDoc = { title: string; blocks: ExportBlock[] };
+/** 회의 정보: Notion에서는 데이터베이스 속성(일시·방식·참석)으로, Markdown에서는 본문 맨 위 글로 */
+export type ExportMeta = {
+  /** 한국 시간 ISO "2026-11-13T23:55:00+09:00" */
+  start: string;
+  end: string | null;
+  mode: string;
+  attendees: string[];
+  teamSize: number;
+};
+
+export type ExportDoc = {
+  title: string;
+  meta: ExportMeta;
+  /** meta를 글로 쓴 줄 (Markdown·일반 페이지용) */
+  metaBlocks: ExportBlock[];
+  /** 요약·안건·할 일·일정 */
+  blocks: ExportBlock[];
+};
+
+/** Date → 한국 시간 ISO (Notion 날짜 속성에 시간대까지 넣음) */
+function kstDateTime(d: Date): string {
+  const k = new Date(d.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 19);
+  return `${k}+09:00`;
+}
 
 function dateLabel(iso: string | null, dueText?: string): string {
   if (iso) {
@@ -31,6 +54,8 @@ export async function buildMeetingDoc(meeting: Meeting): Promise<ExportDoc> {
     where: { id: meeting.id },
     select: {
       summary: true,
+      startedAt: true,
+      endedAt: true,
       agendaItems: { select: { actionItems: { select: { title: true, dueDate: true, done: true, member: { select: { name: true } } } } } },
     },
   });
@@ -38,11 +63,19 @@ export async function buildMeetingDoc(meeting: Meeting): Promise<ExportDoc> {
   const attendees = meeting.attendeeIds.map((id) => names[id]).filter(Boolean);
   const teamSize = meeting.members.filter((m) => !m.id.startsWith("speaker:")).length;
 
-  const blocks: ExportBlock[] = [
+  const metaBlocks: ExportBlock[] = [
     { type: "p", lead: "일시 ", text: `${formatFullDate(meeting.date)} ${meeting.timeRange}` },
     { type: "p", lead: "방식 ", text: meeting.mode },
     { type: "p", lead: "참석 ", text: `${attendees.length}/${teamSize}명 · ${attendees.join(", ")}` },
   ];
+  const meta: ExportMeta = {
+    start: extra ? kstDateTime(extra.startedAt) : `${meeting.date}T00:00:00+09:00`,
+    end: extra?.endedAt ? kstDateTime(extra.endedAt) : null,
+    mode: meeting.mode,
+    attendees,
+    teamSize,
+  };
+  const blocks: ExportBlock[] = [];
 
   if (extra?.summary) blocks.push({ type: "h2", text: "요약" }, { type: "p", text: extra.summary });
 
@@ -76,13 +109,13 @@ export async function buildMeetingDoc(meeting: Meeting): Promise<ExportDoc> {
   }
 
   blocks.push({ type: "divider", text: "" }, { type: "p", text: `${BRAND.name}로 회의 녹음을 정리한 페이지예요.` });
-  return { title: `${meeting.title} · ${meeting.date}`, blocks };
+  return { title: meeting.title, meta, metaBlocks, blocks };
 }
 
 /** 같은 문서를 Markdown으로 (Notion을 연결하지 않아도 복사해서 붙여 넣을 수 있게) */
 export function toMarkdown(doc: ExportDoc): string {
   const lines: string[] = [`# ${doc.title}`, ""];
-  for (const b of doc.blocks) {
+  for (const b of [...doc.metaBlocks, ...doc.blocks]) {
     const body = `${b.lead ? `**${b.lead.trim()}** ` : ""}${b.text}`;
     switch (b.type) {
       case "h2":

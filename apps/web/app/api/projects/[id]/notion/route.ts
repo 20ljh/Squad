@@ -37,7 +37,7 @@ export async function POST(request: Request, { params }: Ctx) {
   const pages = await listNotionPages(token).catch(() => null);
   const page = pages?.find((p) => p.id === body.pageId);
   if (!page) return NextResponse.json({ error: "그 페이지를 찾을 수 없어요. Notion 연결 때 공유한 페이지 중에서 골라 주세요." }, { status: 400 });
-  await db.project.update({ where: { id: params.id }, data: { notionPageId: page.id, notionPageTitle: page.title } });
+  await db.project.update({ where: { id: params.id }, data: { notionPageId: page.id, notionPageTitle: page.title, notionDatabaseId: null } }); // 페이지를 바꾸면 회의록 데이터베이스는 새로
   return NextResponse.json({ pageId: page.id, pageTitle: page.title });
 }
 
@@ -46,7 +46,7 @@ export async function DELETE(_request: Request, { params }: Ctx) {
   if (!auth.ok) return auth.response;
   await db.project.update({
     where: { id: params.id },
-    data: { notionTokenEnc: null, notionWorkspace: null, notionConnectedAt: null, notionPageId: null, notionPageTitle: null },
+    data: { notionTokenEnc: null, notionWorkspace: null, notionConnectedAt: null, notionPageId: null, notionPageTitle: null, notionDatabaseId: null },
   });
   return NextResponse.json({ connected: false });
 }

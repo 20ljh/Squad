@@ -1,5 +1,6 @@
 import { appUrl } from "@/lib/auth/session";
-import type { ExportBlock } from "@/lib/meeting-export";
+import { BRAND } from "@/lib/brand";
+import type { ExportBlock, ExportDoc } from "@/lib/meeting-export";
 
 // Notion 공개 연동(OAuth) 어댑터 (CLAUDE.md 10절, lib/integrations/ 로 분리)
 // - 팀장이 "Notion 연결"을 누르면 Notion 화면에서 워크스페이스와 공유할 페이지를 고름
@@ -121,14 +122,59 @@ function toNotionBlock(b: ExportBlock): Record<string, unknown> {
   }
 }
 
-/** 상위 페이지 아래에 회의 페이지를 만들고 주소를 돌려줌. 블록이 100개를 넘으면 나눠서 붙임 */
-export async function createNotionMeetingPage(token: string, parentPageId: string, title: string, blocks: ExportBlock[]): Promise<string> {
-  const children = blocks.map(toNotionBlock);
+// ---- 회의록 데이터베이스 ----
+// 고른 페이지 안에 인라인(페이지 본문 속 표)으로 하나 만들고, 회의 하나 = 한 줄. 속성 이름은 아래 PROP 한 곳에서만
+
+const PROP = { title: "이름", date: "일시", mode: "방식", attendees: "참석", count: "참석 인원" } as const;
+
+/** 선택·다중 선택 값에는 쉼표를 쓸 수 없고 100자까지 */
+function option(name: string): string {
+  return name.replace(/,/g, " ").trim().slice(0, 100) || "기타";
+}
+
+/** 고른 페이지 안에 "{서비스 이름} 회의록" 인라인 데이터베이스를 만들고 id를 돌려줌 (이름은 처음 만들 때만, 이후엔 팀이 Notion에서 바꿔도 됨) */
+export const MEETINGS_DATABASE_TITLE = `${BRAND.name} 회의록`;
+
+export async function createMeetingsDatabase(token: string, parentPageId: string): Promise<string> {
+  const db = await call<{ id: string }>("/databases", {
+    method: "POST",
+    token,
+    body: {
+      parent: { type: "page_id", page_id: parentPageId },
+      is_inline: true,
+      title: rich(MEETINGS_DATABASE_TITLE),
+      properties: {
+        [PROP.title]: { title: {} },
+        [PROP.date]: { date: {} },
+        [PROP.mode]: { select: {} },
+        [PROP.attendees]: { multi_select: {} },
+        [PROP.count]: { number: { format: "number" } },
+      },
+    },
+  });
+  return db.id;
+}
+
+/** 회의록 데이터베이스에 회의 한 줄(페이지)을 만들고 주소를 돌려줌. 본문 블록이 100개를 넘으면 나눠서 붙임 */
+export async function createNotionMeetingPage(token: string, databaseId: string, doc: ExportDoc): Promise<string> {
+  const children = doc.blocks.map(toNotionBlock);
   const first = children.slice(0, 100);
+  const { meta } = doc;
   const page = await call<{ id: string; url: string }>("/pages", {
     method: "POST",
     token,
-    body: { parent: { page_id: parentPageId }, icon: { type: "emoji", emoji: "🗒️" }, properties: { title: { title: rich(title) } }, children: first },
+    body: {
+      parent: { database_id: databaseId },
+      icon: { type: "emoji", emoji: "🗒️" },
+      properties: {
+        [PROP.title]: { title: rich(doc.title) },
+        [PROP.date]: { date: { start: meta.start, ...(meta.end ? { end: meta.end } : {}) } },
+        [PROP.mode]: { select: { name: option(meta.mode) } },
+        [PROP.attendees]: { multi_select: [...new Set(meta.attendees.map(option))].map((name) => ({ name })) },
+        [PROP.count]: { number: meta.attendees.length },
+      },
+      children: first,
+    },
   });
   for (let i = 100; i < children.length; i += 100) {
     await new Promise((r) => setTimeout(r, 350)); // 초당 3요청 제한
