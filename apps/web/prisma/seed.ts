@@ -137,7 +137,7 @@ async function main() {
     durationSec: 42 * 60 + 18,
   });
 
-  const recIds = await createProject(REC_TEST_PROJECT_ID, "받아쓰기·요약 시험", "실제 팀 회의 녹음", sttTestMeeting, "rec-");
+  const recIds = await createProject(REC_TEST_PROJECT_ID, "받아쓰기, 요약 시험", "실제 팀 회의 녹음", sttTestMeeting, "rec-");
   // 녹음 파일의 기록 시각(13:57)이 녹음이 끝난 때라고 보고, 길이(5분 50초)만큼 앞을 시작으로 둠
   await createMeeting(sttTestMeeting, {
     projectId: REC_TEST_PROJECT_ID,
@@ -148,7 +148,7 @@ async function main() {
   });
 
   const counts = await Promise.all([db.project.count(), db.meeting.count(), db.agendaItem.count(), db.opinion.count()]);
-  console.log(`넣었어요: 프로젝트 ${counts[0]} · 회의 ${counts[1]} · 안건 ${counts[2]} · 의견 ${counts[3]}`);
+  console.log(`넣었어요: 프로젝트 ${counts[0]}, 회의 ${counts[1]}, 안건 ${counts[2]}, 의견 ${counts[3]}`);
 }
 
 main()

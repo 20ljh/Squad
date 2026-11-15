@@ -88,7 +88,7 @@ export default async function HomePage() {
         <div className="flex flex-wrap items-start gap-8 md:gap-12">
           {/* 소개 + 프로젝트 만들기 */}
           <section className="flex min-w-0 flex-[1_1_460px] animate-fade-up flex-col gap-4 md:gap-5 md:pt-2">
-            <p className="m-0 text-sm text-ink-soft">회의록 자동 요약 서비스</p>
+            <p className="m-0 text-sm text-ink-soft">STT 및 LLM 기반 음성 회의 요약 서비스</p>
             <h1 className="m-0 text-balance font-display text-[32px] font-semibold leading-[1.3] tracking-[-.02em] md:text-[52px] md:leading-[1.2]">
               회의가 끝나면
               <br />
