@@ -29,7 +29,7 @@ function deviceLabel(ua: string | null): string {
   if (!ua) return "알 수 없는 기기";
   const browser = /Edg\//.test(ua) ? "Edge" : /Chrome\//.test(ua) ? "Chrome" : /Firefox\//.test(ua) ? "Firefox" : /Safari\//.test(ua) ? "Safari" : "브라우저";
   const os = /Windows/.test(ua) ? "Windows" : /Android/.test(ua) ? "Android" : /iPhone|iPad/.test(ua) ? "iOS" : /Mac OS/.test(ua) ? "macOS" : /Linux/.test(ua) ? "Linux" : "기타";
-  return `${browser} · ${os}`;
+  return `${browser} | ${os}`;
 }
 
 /** 로그인 성공 뒤 세션을 만들고 쿠키를 붙임 (Route Handler 안에서만 호출) */

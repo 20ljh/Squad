@@ -138,7 +138,7 @@ export function TranscriptPlayer({ meetingId, record, members }: { meetingId: st
                   on ? "bg-accent-soft" : "hover:bg-surface-alt disabled:hover:bg-transparent"
                 }`}
               >
-                <span className={`w-12 shrink-0 pt-0.5 font-display text-[13px] tabular-nums ${on ? "font-bold text-accent-strong" : "text-accent-strong"}`}>
+                <span className={`w-12 shrink-0 pt-0.5 font-display text-[13px] tabular-nums ${on ? "font-semibold text-accent-strong" : "text-accent-strong"}`}>
                   {clock(l.start)}
                 </span>
                 <span className="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:gap-3">

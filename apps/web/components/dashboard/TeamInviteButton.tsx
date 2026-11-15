@@ -8,7 +8,7 @@ import { InviteShare } from "@/components/invite/InviteShare";
 
 function PersonPlusIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <circle cx="9" cy="8" r="4" />
       <path d="M2 21a7 7 0 0 1 14 0M19 8v6M16 11h6" />
     </svg>
@@ -68,7 +68,7 @@ export function TeamInviteButton({ projectId }: { projectId: string }) {
       >
         <div className="flex flex-col gap-5 p-6 md:p-7">
           <div className="flex flex-col gap-1">
-            <h2 id="invite-title" className="m-0 font-display text-xl font-bold">
+            <h2 id="invite-title" className="m-0 font-display text-xl font-semibold">
               팀원 초대
             </h2>
             <p className="m-0 text-[14px] leading-[1.6] text-ink-soft">
@@ -94,7 +94,7 @@ export function TeamInviteButton({ projectId }: { projectId: string }) {
                 type="button"
                 onClick={issue}
                 disabled={busy}
-                className="min-h-12 rounded-sm bg-accent-strong px-5 text-[15px] font-bold text-white transition-colors duration-150 hover:bg-accent-deep disabled:opacity-60"
+                className="min-h-12 rounded-sm bg-accent-strong px-5 text-[15px] font-semibold text-white transition-colors duration-150 hover:bg-accent-deep disabled:opacity-60"
               >
                 {busy ? "만드는 중…" : "새 초대 코드 만들기"}
               </button>

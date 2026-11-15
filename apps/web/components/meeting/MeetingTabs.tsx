@@ -9,7 +9,7 @@ type TabKey = "summary" | "transcript";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "summary", label: "요약" },
-  { key: "transcript", label: "녹음·원문" },
+  { key: "transcript", label: "회의 기록" },
 ];
 
 export function MeetingTabs({ summary, transcript }: { summary: React.ReactNode; transcript: React.ReactNode }) {
@@ -57,7 +57,7 @@ export function MeetingTabs({ summary, transcript }: { summary: React.ReactNode;
               aria-controls={`panel-${t.key}`}
               tabIndex={on ? 0 : -1}
               onClick={() => select(t.key)}
-              className={`-mb-px min-h-12 border-b-[3px] px-5 text-[16px] font-bold transition-colors duration-150 ${
+              className={`-mb-px min-h-12 border-b-[3px] px-5 text-[16px] font-semibold transition-colors duration-150 ${
                 on ? "border-accent-strong text-accent-strong" : "border-transparent text-ink-soft hover:text-ink"
               }`}
             >

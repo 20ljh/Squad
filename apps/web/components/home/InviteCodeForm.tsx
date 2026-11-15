@@ -19,7 +19,7 @@ export function InviteCodeForm() {
       return;
     }
     if (!CODE_PATTERN.test(normalized)) {
-      setError("코드에는 영문·숫자·하이픈(-)만 들어가요. 팀장에게 받은 코드를 다시 확인해 주세요.");
+      setError("코드에는 영문, 숫자, 하이픈(-)만 들어가요. 팀장에게 받은 코드를 다시 확인해 주세요.");
       return;
     }
     setError(null);
@@ -46,7 +46,7 @@ export function InviteCodeForm() {
         />
         <button
           type="submit"
-          className="h-12 shrink-0 rounded-sm bg-accent-soft px-[18px] text-[15px] font-bold text-accent-deep transition-colors duration-150 hover:bg-line sm:h-[52px] sm:px-[22px]"
+          className="h-12 shrink-0 rounded-sm bg-accent-soft px-[18px] text-[15px] font-semibold text-accent-deep transition-colors duration-150 hover:bg-line sm:h-[52px] sm:px-[22px]"
         >
           참여
         </button>

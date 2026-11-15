@@ -71,16 +71,16 @@ export function SpeakerMapping({ meetingId, data, failReason }: { meetingId: str
   return (
     <div className="flex flex-col gap-5">
       <p className="m-0 text-[15px] leading-[1.6] text-ink-soft">
-        받아쓰기가 끝났어요. 화자마다 대표 발화를 보고 누구인지 골라 주세요. 고른 이름으로 의견·담당자를 정리해요.
+        받아쓰기가 끝났어요. 화자마다 대표 발화를 보고 누구인지 골라 주세요. 고른 이름으로 의견과 담당자를 정리해요.
       </p>
 
       <ul className="m-0 flex list-none flex-col gap-4 p-0">
         {data.speakers.map((s) => (
           <li key={s.id} className="flex flex-col gap-4 rounded-lg border border-line bg-white p-5 md:p-6">
             <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <h3 className="m-0 font-display text-lg font-bold">{s.label}</h3>
+              <h3 className="m-0 font-display text-lg font-semibold">{s.label}</h3>
               <p className="m-0 text-[13px] tabular-nums text-ink-soft">
-                {s.count}번 말함 · 약 {duration(s.seconds)}
+                {s.count}번 말함 | 약 {duration(s.seconds)}
               </p>
             </div>
             <ul className="m-0 flex list-none flex-col gap-2 rounded-sm bg-surface-alt p-3 md:p-4">
@@ -112,7 +112,7 @@ export function SpeakerMapping({ meetingId, data, failReason }: { meetingId: str
                         className="sr-only"
                       />
                       <span
-                        className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-[13px] font-bold ${c.color ? "text-white" : "bg-surface-alt text-ink-soft"}`}
+                        className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-[13px] font-semibold ${c.color ? "text-white" : "bg-surface-alt text-ink-soft"}`}
                         style={c.color ? { background: c.color } : undefined}
                         aria-hidden="true"
                       >
@@ -151,7 +151,7 @@ export function SpeakerMapping({ meetingId, data, failReason }: { meetingId: str
         type="button"
         onClick={submit}
         disabled={saving}
-        className="h-12 self-end rounded-sm bg-accent-strong px-7 text-base font-bold text-white transition-colors duration-150 hover:bg-accent-deep disabled:opacity-60"
+        className="h-12 self-end rounded-sm bg-accent-strong px-7 text-base font-semibold text-white transition-colors duration-150 hover:bg-accent-deep disabled:opacity-60"
       >
         {saving ? "시작하는 중…" : "확인하고 요약 시작"}
       </button>

@@ -21,7 +21,7 @@ const secondary =
 
 function NotionMark() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinejoin="round" aria-hidden="true">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" aria-hidden="true">
       <rect x="4" y="3" width="16" height="18" rx="2" />
       <path d="M9 16V8l6 8V8" strokeLinecap="round" />
     </svg>
@@ -106,7 +106,7 @@ export function NotionSettings({ projectId, status, flash }: { projectId: string
               <p className="m-0 text-[14px] leading-[1.6] text-ink-soft">
                 {status.pageTitle ? (
                   <>
-                    회의록은 <strong className="text-ink">{status.pageTitle}</strong> 페이지 안의 &lsquo;{BRAND.name} 회의록&rsquo; 표에 한 줄씩 쌓여요(일시·방식·참석 칸 포함).
+                    회의록은 <strong className="text-ink">{status.pageTitle}</strong> 페이지 안의 &lsquo;{BRAND.name} 회의록&rsquo; 표에 한 줄씩 쌓여요(일시, 방식, 참석 칸 포함).
                   </>
                 ) : (
                   "회의록을 넣을 페이지를 골라 주세요."
@@ -143,7 +143,7 @@ export function NotionSettings({ projectId, status, flash }: { projectId: string
               >
                 {pages ? pages.map((p) => <option key={p.id} value={p.id}>{p.title}</option>) : <option>불러오는 중…</option>}
               </select>
-              <button type="button" onClick={save} disabled={busy || !selected} className="min-h-11 rounded-sm bg-accent-strong px-5 text-[14px] font-bold text-white transition-colors duration-150 hover:bg-accent-deep disabled:opacity-60">
+              <button type="button" onClick={save} disabled={busy || !selected} className="min-h-11 rounded-sm bg-accent-strong px-5 text-[14px] font-semibold text-white transition-colors duration-150 hover:bg-accent-deep disabled:opacity-60">
                 이 페이지로 정하기
               </button>
             </div>
@@ -157,7 +157,7 @@ export function NotionSettings({ projectId, status, flash }: { projectId: string
 
       <div className="flex flex-wrap gap-2">
         {!status.connected ? (
-          <a href={`/api/notion/connect?projectId=${encodeURIComponent(projectId)}`} className="inline-flex min-h-12 items-center rounded-sm bg-accent-strong px-5 text-[15px] font-bold text-white no-underline transition-colors duration-150 hover:bg-accent-deep">
+          <a href={`/api/notion/connect?projectId=${encodeURIComponent(projectId)}`} className="inline-flex min-h-12 items-center rounded-sm bg-accent-strong px-5 text-[15px] font-semibold text-white no-underline transition-colors duration-150 hover:bg-accent-deep">
             Notion 연결하기
           </a>
         ) : (

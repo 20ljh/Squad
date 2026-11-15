@@ -38,7 +38,7 @@ export function ExportBar({ meetingId, summary, notion }: Props) {
       const res = await fetch(`/api/meetings/${id}/markdown`);
       if (!res.ok) throw new Error();
       await navigator.clipboard.writeText(await res.text());
-      setCopy({ kind: "ok", text: "Markdown을 복사했어요. Notion·문서에 붙여 넣으면 돼요." });
+      setCopy({ kind: "ok", text: "Markdown을 복사했어요. Notion이나 문서에 붙여 넣으면 돼요." });
     } catch {
       setCopy({ kind: "error", text: "복사하지 못했어요. 잠시 뒤 다시 시도해 주세요." });
     }
@@ -54,7 +54,7 @@ export function ExportBar({ meetingId, summary, notion }: Props) {
     <footer className="flex flex-col gap-4 rounded-lg border border-line bg-white px-5 py-5 md:px-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="min-w-0">
-          <p className="m-0 text-base font-bold">이 결과를 팀 문서로 옮길까요?</p>
+          <p className="m-0 text-base font-semibold">이 결과를 팀 문서로 옮길까요?</p>
           <p className="mt-1 text-sm text-ink-soft">{summary}</p>
           <p className="mt-1 text-sm text-ink-soft">{notionHint}</p>
         </div>
@@ -72,7 +72,7 @@ export function ExportBar({ meetingId, summary, notion }: Props) {
               type="button"
               onClick={exportNotion}
               disabled={exp.kind === "busy"}
-              className="h-12 whitespace-nowrap rounded-sm bg-accent-strong px-6 text-[15px] font-bold text-white transition-colors duration-150 hover:bg-accent-deep disabled:cursor-wait disabled:opacity-80"
+              className="h-12 whitespace-nowrap rounded-sm bg-accent-strong px-6 text-[15px] font-semibold text-white transition-colors duration-150 hover:bg-accent-deep disabled:cursor-wait disabled:opacity-80"
             >
               {exp.kind === "busy" ? "내보내는 중…" : "Notion으로 내보내기"}
             </button>

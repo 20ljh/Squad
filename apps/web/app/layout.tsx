@@ -4,6 +4,7 @@ import { BRAND } from "@/lib/brand";
 // split 방식이라 페이지에 쓰인 글자 묶음만 내려받음. 굵기 400~1000을 모두 지원
 import "wanted-sans/fonts/webfonts/variable/split/WantedSansVariable.css";
 import "./globals.css";
+import { Toaster } from "@/components/ui/Toaster";
 
 export const metadata: Metadata = {
   title: BRAND.name,
@@ -13,7 +14,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ko">
-      <body>{children}</body>
+      <body>
+        {children}
+        <Toaster />
+      </body>
     </html>
   );
 }

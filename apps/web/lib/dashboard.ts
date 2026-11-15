@@ -25,7 +25,7 @@ function totalDuration(sec: number): string {
 /** 제목 아래 한 줄: "n회차 회의 진행 · {가장 가까운 일정}까지 D-n". 앞·뒤 중 없는 쪽은 빼고, 둘 다 없으면 안내 */
 function subline(meetingCount: number, nextDue: string | null): string {
   const parts = [meetingCount ? `${meetingCount}회차 회의 진행` : null, nextDue].filter(Boolean);
-  return parts.length ? parts.join(" · ") : "아직 회의 기록이 없어요";
+  return parts.length ? parts.join(" | ") : "아직 회의 기록이 없어요";
 }
 
 export async function getProjectDashboard(projectId: string): Promise<Dashboard | null> {
@@ -67,12 +67,12 @@ export async function getProjectDashboard(projectId: string): Promise<Dashboard 
   const nextDue = candidates[0] ? `${candidates[0].label}까지 ${dDay(candidates[0].iso, today)}` : null;
 
   return {
-    teamName: p.course ? `${p.name} · ${p.course}` : p.name,
+    teamName: p.course ? `${p.name} | ${p.course}` : p.name,
     headline: "프로젝트 진행 현황",
     subline: subline(p.meetings.length, nextDue),
     members: p.members.map((m) => ({ id: m.id, name: m.name, role: m.position || "맡은 일 미정", initial: m.initial, color: m.color })),
     kpis: [
-      { label: "진행중 액션아이템", value: `${open.length}건`, hint: `이번 주 마감 ${dueThisWeek.length}건` },
+      { label: "진행중 업무", value: `${open.length}건`, hint: `이번 주 마감 ${dueThisWeek.length}건` },
       { label: "마감 임박", value: `${dueSoon.length}건`, hint: "3일 이내", tone: "warn" },
       {
         label: "누적 회의",
@@ -99,15 +99,16 @@ export async function getProjectDashboard(projectId: string): Promise<Dashboard 
         title: m.title,
         shortLabel: m.shortTitle,
         resultLabel: "최근 회의 결과",
-        dateLabel: status === "done" ? dateLabel(m.startedAt) : `${dateLabel(m.startedAt)} · ${STATUS_LABEL[status]}`,
+        dateLabel: status === "done" ? dateLabel(m.startedAt) : `${dateLabel(m.startedAt)} | ${STATUS_LABEL[status]}`,
         attendDone: present.length,
         attendTotal: m.attendances.length || present.length,
         readBy: m.reads.map((r) => r.memberId),
-        absent: m.attendances.filter((a) => !a.present).map((a) => a.memberId),
+        // 참석으로 고르지 않은 팀원(회의 뒤에 들어온 팀원 포함)은 불참으로 표시
+        absent: p.members.filter((x) => !present.some((a) => a.memberId === x.id)).map((x) => x.id),
       };
     }),
     highlights: doneMeetings.flatMap((m) =>
-      m.agendaItems.flatMap((a) => a.opinions.map((o) => ({ text: o.quote, meetingTag: `${m.shortTitle} · ${a.shortTitle}` }))),
+      m.agendaItems.flatMap((a) => a.opinions.map((o) => ({ text: o.quote, meetingTag: `${m.shortTitle} | ${a.shortTitle}` }))),
     ),
   };
 }

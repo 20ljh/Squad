@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
+import { pickTime } from "./pickers";
 
 /** apps/web/.env 의 WORKER_TOKEN (값은 화면·로그에 쓰지 않음) */
 function workerToken(): string {
@@ -50,7 +51,7 @@ test("회의 기록 추가 → 녹음 올리기 → 받아쓰는 중", async ({ 
   await dialog.getByRole("button", { name: "회의 페이지 만들기" }).click();
   await expect(dialog.getByText("회의 시작 시각을 골라 주세요.")).toBeVisible();
 
-  await dialog.getByLabel("시작 시각").fill("13:50");
+  await pickTime(dialog, "시작 시각", "13:50");
   await dialog.getByLabel("방식").fill("대면");
   // 참여자는 기본 전원 → 한 명 빼서 2명
   await dialog.getByText("강금상").click();
@@ -64,10 +65,11 @@ test("회의 기록 추가 → 녹음 올리기 → 받아쓰는 중", async ({ 
   await expect(page.getByText("참석 (2/3)")).toBeVisible();
 
   await page.locator('input[type="file"]').setInputFiles({ name: "회의.wav", mimeType: "audio/wav", buffer: silentWav() });
+  await expect(page.getByRole("status").filter({ hasText: "녹음 파일이 업로드되었어요." })).toBeVisible();
   await page.getByRole("button", { name: "녹음 올리고 정리 시작" }).click();
   // 워커가 아직 가져가지 않았으면 "기다리고 있어요" + 올린 파일 이름·크기
   await expect(page.getByText("받아쓰기를 기다리고 있어요")).toBeVisible();
-  await expect(page.getByText("회의.wav")).toBeVisible();
+  await expect(page.getByText("회의.wav", { exact: true })).toBeVisible();
   await expect(page.getByText("31KB")).toBeVisible();
 
   // 받아쓰기 취소: 뒤를 흐리게 하고 떠오르는 팝업으로 한 번 더 물음
@@ -90,7 +92,7 @@ test("회의 기록 추가 → 녹음 올리기 → 받아쓰는 중", async ({ 
   // 대시보드 회의 기록에 "받아쓰는 중"으로 보임
   await page.getByRole("link", { name: "팀 대시보드" }).click();
   await expect(page).toHaveURL(/\/p\/[a-z0-9]+$/);
-  await expect(page.getByText("받아쓰는 중 · 참석 2/3", { exact: false })).toBeVisible();
+  await expect(page.getByText("받아쓰는 중 | 참석 2/3", { exact: false })).toBeVisible();
   await expect(page.getByText("1회차 회의 진행")).toBeVisible();
 });
 

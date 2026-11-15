@@ -3,10 +3,9 @@ import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/ui/SiteHeader";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { KpiTile } from "@/components/dashboard/KpiTile";
-import { ParticipationCard } from "@/components/dashboard/ParticipationCard";
+import { ParticipationList } from "@/components/dashboard/ParticipationList";
 import { HighlightList } from "@/components/dashboard/HighlightList";
 import { MeetingHistory } from "@/components/dashboard/MeetingHistory";
-import { MeetingSearch } from "@/components/dashboard/MeetingSearch";
 import { getDashboard } from "@/lib/sample-data";
 import { getProjectDashboard } from "@/lib/dashboard";
 import { meetingIdsWithResult } from "@/lib/meetings";
@@ -18,6 +17,8 @@ import type { Dashboard } from "@/lib/types";
 import { canViewProject, requireProjectPage } from "@/lib/auth/access";
 import { pendingRequests } from "@/lib/join";
 import { TeamInviteButton } from "@/components/dashboard/TeamInviteButton";
+import { TeamManageButton } from "@/components/dashboard/TeamManageButton";
+import { db } from "@/lib/db";
 import { JoinRequestList } from "@/components/dashboard/JoinRequestList";
 import { NotionSettings } from "@/components/dashboard/NotionSettings";
 import { notionStatus } from "@/lib/notion-project";
@@ -45,6 +46,13 @@ export default async function ProjectMainPage({ params, searchParams }: Params) 
   const isLeader = access?.member.role === "leader";
   const requests = isLeader ? await pendingRequests(params.id) : [];
   const notion = isLeader ? await notionStatus(params.id) : null;
+  // 팀장 관리 팝업용 팀원 목록 (권한·연결 여부까지)
+  const manage = isLeader
+    ? await db.project.findUnique({
+        where: { id: params.id },
+        select: { name: true, members: { orderBy: { order: "asc" }, select: { id: true, name: true, position: true, initial: true, color: true, role: true, userId: true } } },
+      })
+    : null;
   const found = await loadDashboard(params.id);
   if (!found) notFound();
   const { data, sample } = found;
@@ -63,7 +71,7 @@ export default async function ProjectMainPage({ params, searchParams }: Params) 
   const heading = (
     <>
       <p className="m-0 text-sm font-semibold text-accent-strong">{data.teamName}</p>
-      <h1 className="m-0 text-balance font-display text-[clamp(26px,4vw,36px)] font-bold tracking-[-.01em]">{data.headline}</h1>
+      <h1 className="m-0 text-balance font-display text-[clamp(26px,4vw,36px)] font-semibold tracking-[-.01em]">{data.headline}</h1>
       <p className="m-0 text-base tabular-nums text-ink-soft">{data.subline}</p>
     </>
   );
@@ -84,6 +92,13 @@ export default async function ProjectMainPage({ params, searchParams }: Params) 
           <section className="flex animate-fade-up flex-wrap items-end justify-between gap-4">
             <div className="flex min-w-0 flex-col gap-2">{heading}</div>
             <div className="flex flex-wrap gap-2">
+              {isLeader && manage ? (
+                <TeamManageButton
+                  projectId={params.id}
+                  projectName={manage.name}
+                  members={manage.members.map((m) => ({ id: m.id, name: m.name, position: m.position, initial: m.initial, color: m.color, leader: m.role === "leader", linked: Boolean(m.userId) }))}
+                />
+              ) : null}
               {isLeader ? <TeamInviteButton projectId={params.id} /> : null}
               <AddMeetingButton projectId={params.id} members={data.members} />
             </div>
@@ -109,22 +124,18 @@ export default async function ProjectMainPage({ params, searchParams }: Params) 
 
         <section aria-labelledby="participation-title" className="flex flex-col gap-4">
           <SectionHeading id="participation-title" title="팀원별 참여 현황" />
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4">
-            {data.participation.map((p) => {
-              const m = byId[p.memberId];
-              return m ? <ParticipationCard key={p.memberId} member={m} data={p} /> : null;
-            })}
-          </div>
+          {/* 똑같은 카드 여러 장 대신 표 한 장 */}
+          <ParticipationList rows={data.participation.flatMap((p) => (byId[p.memberId] ? [{ member: byId[p.memberId], data: p }] : []))} />
         </section>
 
         <section aria-labelledby="highlight-title" className="flex flex-col gap-4">
-          <SectionHeading id="highlight-title" title="하이라이트 인용구" />
+          <SectionHeading id="highlight-title" title="회의 주요 내용 정리" />
           <HighlightList items={data.highlights} />
         </section>
 
         <section aria-labelledby="history-title" className="flex flex-col gap-4">
-          <SectionHeading id="history-title" title="회의 기록과 캐치업 현황" />
-          <MeetingHistory rounds={data.rounds} members={data.members} hrefs={meetingHrefs} />
+          {/* 제목과 팀장의 "회의 기록 관리" 버튼은 MeetingHistory 안에 */}
+          <MeetingHistory rounds={data.rounds} members={data.members} hrefs={meetingHrefs} canManage={isLeader && !sample} />
         </section>
 
         {notion ? (
@@ -133,15 +144,6 @@ export default async function ProjectMainPage({ params, searchParams }: Params) 
             <NotionSettings projectId={params.id} status={notion} flash={searchParams?.notion} />
           </section>
         ) : null}
-
-        <section aria-labelledby="search-title" className="flex flex-col gap-4">
-          <SectionHeading
-            id="search-title"
-            title="회의 기록 검색"
-            description="지난 회의 전체에서 “언제, 왜 그렇게 정했는지” 바로 찾아드려요."
-          />
-          <MeetingSearch sample={data.sampleSearch} />
-        </section>
       </main>
     </div>
   );

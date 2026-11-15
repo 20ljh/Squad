@@ -4,12 +4,13 @@
 
 /* 팀원 색상처럼 데이터로 들어오는 값은 인라인 style로, 나머지는 tailwind 토큰으로 처리 */
 :root {
-  --ink: #372f52;
-  --ink-soft: #726a94;
-  --line: #ece3fa;
-  --accent: #8b7cf6;
-  --accent-strong: #6c55e6;
-  --accent-soft: #efe9fe;
+  --ink: #1f1b16;
+  --ink-soft: #5e554a;
+  --line: #e7e1d6;
+  --accent: #4c6ef5;
+  --accent-strong: #2f4ac0;
+  --accent-soft: #e9edfb;
+  --marker: #ffe27a;
 }
 
 html {
@@ -17,14 +18,14 @@ html {
 }
 
 body {
-  @apply m-0 bg-page font-body text-ink antialiased;
+  @apply m-0 bg-surface-alt font-body text-ink antialiased;
   min-height: 100vh;
 }
 
 a:focus-visible,
 button:focus-visible,
 input:focus-visible {
-  outline: 2px solid #8b7cf6;
+  outline: 2px solid #2f4ac0;
   outline-offset: 2px;
 }
 

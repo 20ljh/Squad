@@ -10,7 +10,7 @@ export default function TermsPage() {
     <LegalPage
       title="이용 약관"
       updated="2026년 11월 13일"
-      intro={`${BRAND.name}는 대학 조별과제·캡스톤 팀의 회의를 정리하는 무료 서비스예요. 졸업작품으로 운영하고 있어서 언제든 바뀌거나 멈출 수 있어요.`}
+      intro={`${BRAND.name}는 대학 조별과제, 캡스톤 팀의 회의를 정리하는 무료 서비스예요. 졸업작품으로 운영하고 있어서 언제든 바뀌거나 멈출 수 있어요.`}
       sections={[
         {
           title: "녹음 올리기",

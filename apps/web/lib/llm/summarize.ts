@@ -13,8 +13,9 @@ import { db } from "../db";
 const MODEL = process.env.LLM_MODEL ?? "claude-haiku-5-5";
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
-// 마인드맵 칸에 맞춘 글자 수 (모델이 가끔 넘어서 저장할 때 자름)
-const LIMIT = { shortTitle: 12, gist: 15, decisionShort: 14 };
+// 마인드맵 칸 글자 수. 모델에게는 짧게(12·15·14자) 쓰라고 하고, 넘겨도 마인드맵이 두 줄까지 그리므로
+// 저장할 때는 두 줄 분량까지 두고 그보다 길 때만 단어 경계에서 "…"로 자름
+const LIMIT = { shortTitle: 22, gist: 30, decisionShort: 28 };
 
 const SYSTEM = `너는 대학 조별과제 팀의 회의를 정리하는 도우미다.
 입력은 음성 인식(STT)으로 만든 회의 원문이고, 각 줄은 "[분:초] 이름: 말" 형식이다.
@@ -28,9 +29,9 @@ const SYSTEM = `너는 대학 조별과제 팀의 회의를 정리하는 도우�
 - 원문에 근거가 있는 것만 쓴다. 담당자·마감·결정을 지어내지 마라.
 - 안건은 회의에서 실제로 다룬 주제 단위로 나눈다(보통 2~5개).
 - opinions: 안건마다 사람별 핵심 의견. speaker는 원문에 나온 이름을 그대로 쓴다.
-  quote는 원문 말투를 살려 오류만 고친 한두 문장, gist는 15자 이내 요지.
+  quote는 원문 말투를 살려 오류만 고친 한두 문장, gist는 20자 안팎의 요지.
   highlight: 회의 전체에서 방향을 정했거나 가장 인상적인 발언 1~2개만 true, 나머지는 false.
-- decision: 그 안건에서 합의된 결론. 합의가 없으면 null. short는 14자 이내.
+- decision: 그 안건에서 합의된 결론. 합의가 없으면 null. short는 18자 안팎.
   owner는 원문에 나온 이름, "전원", 또는 정해지지 않았으면 null.
 - 마감·일정의 날짜(dueDate, date)는 회의 날짜(meetingDate)를 기준으로 하루로 정해질 때만 YYYY-MM-DD로 쓴다.
   예) "5월 14일", "이번 주 일요일", "다음 주 목요일"은 날짜로 바꾼다.
@@ -38,7 +39,9 @@ const SYSTEM = `너는 대학 조별과제 팀의 회의를 정리하는 도우�
   dueText에는 원문의 마감 표현을 짧게 남긴다(예: "자정", "주말"). 날짜만으로 충분하면 null.
 - actionItems: 누가 무엇을 언제까지 하기로 했는지. 결정과 겹쳐도 따로 적는다.
 - schedules: 날짜나 기한이 나온 일정.
-- shortTitle(안건)은 12자 이내.
+- shortTitle(안건)은 14자 안팎.
+- gist·short·shortTitle은 마인드맵 칸에 들어가는 짧은 말이다. 글자 수를 맞추려고 단어 중간에서 끊지 마라.
+  길면 더 짧은 표현으로 바꿔 쓰고, 끝은 완결된 말로 맺어라. 예) "2명씩 1·2차로 나눠 발표", "다음 회의 전 주제 확인".
 - 모든 문장은 한국어, 사용자에게 보여 줄 말투(~하기로 함, ~까지 공유)로 쓴다.`;
 
 const nullableString = { type: ["string", "null"] } as const;
@@ -143,7 +146,11 @@ function extraDueText(dueDate: string | null, dueText: string | null): string | 
 
 function cut(s: string, n: number): string {
   const chars = [...s.trim()];
-  return chars.length <= n ? chars.join("") : chars.slice(0, n).join("");
+  if (chars.length <= n) return chars.join("");
+  // 단어 중간에서 자르지 않게 마지막 띄어쓰기 앞까지 (너무 짧아지면 글자 단위로)
+  const head = chars.slice(0, n - 1).join("");
+  const sp = head.lastIndexOf(" ");
+  return `${(sp >= n / 2 ? head.slice(0, sp) : head).trimEnd()}…`;
 }
 
 async function loadMeeting(meetingId: string) {

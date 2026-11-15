@@ -6,5 +6,5 @@ export const BRAND = {
 } as const;
 
 export function pageTitle(title?: string) {
-  return title ? `${title} · ${BRAND.name}` : BRAND.name;
+  return title ? `${title} | ${BRAND.name}` : BRAND.name;
 }

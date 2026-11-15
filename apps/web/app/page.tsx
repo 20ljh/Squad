@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { SiteHeader } from "@/components/ui/SiteHeader";
 import { InviteCodeForm } from "@/components/home/InviteCodeForm";
+import { ResultPreview } from "@/components/home/ResultPreview";
+import { latestMeetingPreview } from "@/lib/home-preview";
 import { MyProjectList } from "@/components/home/MyProjectList";
 import { BRAND } from "@/lib/brand";
 import { getMyProjects } from "@/lib/my-projects";
@@ -15,7 +17,7 @@ const SAMPLE_HREF = projectPath(SAMPLE_PROJECT_ID);
 type IconName = "list" | "flow" | "export";
 
 const features: { icon: IconName; title: string; body: string }[] = [
-  { icon: "list", title: "안건·결정·할 일 정리", body: "누가 무엇을 언제까지 하기로 했는지 회의마다 한 페이지로 남아요." },
+  { icon: "list", title: "안건, 결정, 업무 정리", body: "누가 무엇을 언제까지 하기로 했는지 회의마다 한 페이지로 남아요." },
   { icon: "flow", title: "회의 흐름 마인드맵", body: "의견이 어떻게 결정으로 모였는지 한눈에 볼 수 있어요." },
   { icon: "export", title: "Notion으로 내보내기", body: "정리한 결과를 팀이 이미 쓰는 Notion 페이지에 그대로 넣어줘요." },
 ];
@@ -27,7 +29,7 @@ function Icon({ name }: { name: IconName | "plus" | "chevron" }) {
     viewBox: "0 0 24 24",
     fill: "none",
     stroke: "currentColor",
-    strokeWidth: 2,
+    strokeWidth: 1.5,
     strokeLinecap: "round" as const,
     strokeLinejoin: "round" as const,
     "aria-hidden": true,
@@ -74,28 +76,31 @@ function Icon({ name }: { name: IconName | "plus" | "chevron" }) {
 export default async function HomePage() {
   const user = await getCurrentUser();
   const myProjects = user ? await getMyProjects(user.id) : null;
+  // 로그인했고 정리된 회의가 있으면 내 최근 회의를, 아니면 예시를 보여 줌
+  const preview = user ? await latestMeetingPreview(user.id) : null;
 
   return (
     <div className="min-h-screen break-keep bg-surface-alt [overflow-wrap:anywhere]">
-      <SiteHeader nav={{ href: SAMPLE_HREF, label: "샘플 프로젝트 보기", shortLabel: "샘플 보기" }} />
+      {/* 상단 "샘플 프로젝트 보기" 버튼은 2026-11-15에 뺌 (메인의 결과 미리보기가 그 역할) */}
+      <SiteHeader />
 
       <main className="mx-auto flex w-full max-w-page flex-col gap-8 px-5 pb-16 pt-10 sm:px-8 md:gap-16 md:pt-20">
         <div className="flex flex-wrap items-start gap-8 md:gap-12">
           {/* 소개 + 프로젝트 만들기 */}
           <section className="flex min-w-0 flex-[1_1_460px] animate-fade-up flex-col gap-4 md:gap-5 md:pt-2">
-            <p className="m-0 text-sm font-semibold text-accent-strong">Team Meeting Notes</p>
-            <h1 className="m-0 text-balance font-display text-[32px] font-bold leading-[1.3] tracking-[-.02em] md:text-[52px] md:leading-[1.2]">
+            <p className="m-0 text-sm text-ink-soft">회의록 자동 요약 서비스</p>
+            <h1 className="m-0 text-balance font-display text-[32px] font-semibold leading-[1.3] tracking-[-.02em] md:text-[52px] md:leading-[1.2]">
               회의가 끝나면
               <br />
-              정리는 {BRAND.name}가
+              <span className="bg-marker box-decoration-clone">정리는</span> {BRAND.name}가
             </h1>
             <p className="m-0 max-w-[30em] text-base leading-[1.7] text-ink-soft md:text-lg">
-              녹음이나 회의록을 올리면 안건·결정·할 일을 정리하고, 팀 Notion으로 보내드려요. 조별과제·캡스톤 팀을 위한 무료 서비스예요.
+              녹음이나 회의록을 올리면 안건, 결정, 업무를 정리하고, 팀 Notion으로 보내드려요.
             </p>
             <div className="mt-2 flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center md:gap-5">
               <Link
                 href="/projects/new"
-                className="flex h-14 items-center justify-center gap-2 rounded-sm bg-accent-strong px-7 text-base font-bold text-white no-underline transition-colors duration-150 hover:bg-accent-deep"
+                className="flex h-14 items-center justify-center gap-2 rounded-sm bg-accent-strong px-7 text-base font-semibold text-white no-underline transition-colors duration-150 hover:bg-accent-deep"
               >
                 <Icon name="plus" />
                 프로젝트 만들기
@@ -106,8 +111,8 @@ export default async function HomePage() {
 
           {/* 초대 코드 + 내 프로젝트 */}
           <div className="flex min-w-0 flex-[1_1_400px] flex-col gap-4">
-            <section aria-labelledby="join-title" className="flex flex-col gap-3 rounded-lg border border-line bg-white p-5 md:p-6">
-              <h2 id="join-title" className="m-0 font-display text-lg font-bold md:text-xl">
+            <section aria-labelledby="join-title" className="flex flex-col gap-3 rounded-lg border border-ink-soft/40 bg-white p-5 md:p-6">
+              <h2 id="join-title" className="m-0 font-display text-lg font-semibold md:text-xl">
                 초대 코드로 참여
               </h2>
               <label htmlFor="invite-code" className="text-sm text-ink-soft">
@@ -116,8 +121,8 @@ export default async function HomePage() {
               <InviteCodeForm />
             </section>
 
-            <section aria-labelledby="my-projects-title" className="flex flex-col gap-3 rounded-lg border border-line bg-white p-5 md:p-6">
-              <h2 id="my-projects-title" className="m-0 font-display text-lg font-bold md:text-xl">
+            <section aria-labelledby="my-projects-title" className="flex flex-col gap-3 rounded-lg border border-ink-soft/40 bg-white p-5 md:p-6">
+              <h2 id="my-projects-title" className="m-0 font-display text-lg font-semibold md:text-xl">
                 내 프로젝트
               </h2>
               <MyProjectList items={myProjects} />
@@ -125,14 +130,25 @@ export default async function HomePage() {
           </div>
         </div>
 
+        {/* 대표 장면: 회의가 끝나면 남는 결과 한 장 (로그인하면 내 최근 회의, 아니면 예시) */}
+        <section aria-labelledby="preview-title" className="flex flex-col gap-4">
+          <div className="flex items-baseline justify-between gap-4">
+            <h2 id="preview-title" className="m-0 font-display text-lg font-semibold md:text-xl">
+              {preview ? "최근 회의는 이렇게 남았어요" : "회의가 끝나면 이렇게 남아요"}
+            </h2>
+            <span className="text-[13px] text-ink-soft">{preview ? "내 프로젝트" : "예시"}</span>
+          </div>
+          <ResultPreview data={preview} />
+        </section>
+
         {/* 서비스 소개 — PC에서만 (모바일은 아래 샘플 링크로 대신). 카드 대신 위쪽 선으로 구분한 세 단 */}
-        <section aria-label={`${BRAND.name}가 하는 일`} className="hidden grid-cols-3 gap-10 border-t border-line pt-10 md:grid">
+        <section aria-label={`${BRAND.name}가 하는 일`} className="hidden grid-cols-3 gap-10 border-t border-ink-soft/40 pt-10 md:grid">
           {features.map((f) => (
             <div key={f.title} className="flex flex-col gap-2">
-              <span className="mb-1 inline-flex h-10 w-10 items-center justify-center rounded-sm bg-white text-accent-strong">
+              <span className="mb-1 inline-flex h-6 w-6 items-center text-ink-soft">
                 <Icon name={f.icon} />
               </span>
-              <h3 className="m-0 font-display text-lg font-bold">{f.title}</h3>
+              <h3 className="m-0 font-display text-lg font-semibold">{f.title}</h3>
               <p className="m-0 text-[15px] leading-[1.65] text-ink-soft">{f.body}</p>
             </div>
           ))}

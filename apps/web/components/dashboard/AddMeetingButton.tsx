@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { Member } from "@/lib/types";
 import { meetingPath } from "@/lib/paths";
+import { DateField, TimeField } from "@/components/ui/PickerField";
 
 // 대시보드의 "회의 기록 추가" 버튼 + 팝업
 // 팝업 칸은 회의 결과 페이지 맨 위 정보 줄과 같음: 회의 일자 · 시작 시각 · 방식 · 참여자
@@ -19,7 +20,7 @@ function todayIso(): string {
 
 function PlusIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
       <path d="M12 5v14M5 12h14" />
     </svg>
   );
@@ -91,7 +92,7 @@ export function AddMeetingButton({ projectId, members }: { projectId: string; me
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex h-12 items-center gap-2 rounded-sm bg-accent-strong px-6 text-base font-bold text-white transition-colors duration-150 hover:bg-accent-deep"
+        className="inline-flex h-12 items-center gap-2 rounded-sm bg-accent-strong px-6 text-base font-semibold text-white transition-colors duration-150 hover:bg-accent-deep"
       >
         <PlusIcon />
         회의 기록 추가
@@ -108,7 +109,7 @@ export function AddMeetingButton({ projectId, members }: { projectId: string; me
       >
         <form onSubmit={submit} noValidate className="flex flex-col gap-5 p-6 md:p-7">
           <div className="flex flex-col gap-1">
-            <h2 id="add-meeting-title" className="m-0 font-display text-xl font-bold">
+            <h2 id="add-meeting-title" className="m-0 font-display text-xl font-semibold">
               회의 기록 추가
             </h2>
             <p className="m-0 text-[14px] text-ink-soft">회의 정보를 넣으면 녹음을 올릴 수 있는 회의 페이지가 만들어져요.</p>
@@ -119,13 +120,13 @@ export function AddMeetingButton({ projectId, members }: { projectId: string; me
               <label htmlFor="m-date" className="text-sm font-semibold">
                 회의 일자
               </label>
-              <input id="m-date" type="date" required value={date} onChange={(e) => setDate(e.target.value)} className={inputClass} />
+              <DateField id="m-date" value={date} onChange={setDate} />
             </div>
             <div className="flex flex-col gap-2">
               <label htmlFor="m-time" className="text-sm font-semibold">
                 시작 시각
               </label>
-              <input id="m-time" type="time" required value={time} onChange={(e) => setTime(e.target.value)} className={inputClass} />
+              <TimeField id="m-time" value={time} onChange={setTime} />
             </div>
           </div>
 
@@ -167,7 +168,7 @@ export function AddMeetingButton({ projectId, members }: { projectId: string; me
                   >
                     <input type="checkbox" checked={on} onChange={() => toggle(m.id)} className="sr-only" />
                     <span
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[13px] font-bold text-white"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[13px] font-semibold text-white"
                       style={{ background: m.color, opacity: on ? 1 : 0.35 }}
                       aria-hidden="true"
                     >
@@ -197,7 +198,7 @@ export function AddMeetingButton({ projectId, members }: { projectId: string; me
             <button
               type="submit"
               disabled={saving}
-              className="h-12 rounded-sm bg-accent-strong px-6 text-[15px] font-bold text-white transition-colors duration-150 hover:bg-accent-deep disabled:opacity-60"
+              className="h-12 rounded-sm bg-accent-strong px-6 text-[15px] font-semibold text-white transition-colors duration-150 hover:bg-accent-deep disabled:opacity-60"
             >
               {saving ? "만드는 중…" : "회의 페이지 만들기"}
             </button>

@@ -8,7 +8,7 @@ type Props = {
 export function SectionHeading({ title, description, id }: Props) {
   return (
     <div className="flex flex-col gap-1">
-      <h2 id={id} className="m-0 font-display text-[22px] font-bold">
+      <h2 id={id} className="m-0 font-display text-xl font-semibold">
         {title}
       </h2>
       {description ? <p className="m-0 text-[15px] text-ink-soft">{description}</p> : null}

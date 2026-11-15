@@ -3,12 +3,16 @@ node_modules/
 out/
 *.tsbuildinfo
 
+# 테스트 파일
+meeting_rec.m4a
+
 # Playwright 결과물
 test-results/
 playwright-report/
 screenshots/
 next-env.d.ts
 
+# 토큰
 .env
 .env.*
 !.env.example

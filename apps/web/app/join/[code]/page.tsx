@@ -18,7 +18,7 @@ function Card({ title, description, children }: { title: string; description?: R
   return (
     <section className="flex animate-fade-up flex-col gap-6 rounded-lg border border-line bg-white p-6 sm:p-8">
       <div className="flex flex-col gap-2">
-        <h1 className="m-0 font-display text-[24px] font-bold leading-[1.3] sm:text-[26px]">{title}</h1>
+        <h1 className="m-0 font-display text-[24px] font-semibold leading-[1.3] sm:text-[26px]">{title}</h1>
         {description ? <div className="m-0 text-base leading-[1.6] text-ink-soft">{description}</div> : null}
       </div>
       {children}
@@ -47,7 +47,7 @@ export default async function JoinPage({ params }: Params) {
   } else {
     if (await findMembership(project.id, user.id)) redirect(projectPath(project.id));
     const req = await latestRequest(project.id, user.id);
-    const projectLine = project.course ? `${project.name} · ${project.course}` : project.name;
+    const projectLine = project.course ? `${project.name} | ${project.course}` : project.name;
 
     if (req?.status === "approved") {
       const names = await unlinkedMembers(project.id);

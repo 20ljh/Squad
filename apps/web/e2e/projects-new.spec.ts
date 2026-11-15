@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { pickDate } from "./pickers";
 
 // 기본 프로젝트 설정(/projects/new) 입력 동작
 test.describe("프로젝트 만들기 · 기본 설정", () => {
@@ -37,7 +38,7 @@ test.describe("프로젝트 만들기 · 기본 설정", () => {
     // 최종 마감일: 오늘부터 30일 뒤 → 대시보드 소제목 "최종 마감까지 D-30"
     const d = new Date(Date.now() + 30 * 86_400_000);
     const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-    await page.getByLabel(/최종 마감일/).fill(iso);
+    await pickDate(page, /최종 마감일/, iso);
     await page.getByRole("button", { name: "프로젝트 만들기" }).click();
 
     // 초대 링크·코드 공유 (코드 원문은 여기서 한 번만)
@@ -59,13 +60,22 @@ test.describe("프로젝트 만들기 · 기본 설정", () => {
     await expect(page.getByText("아직 Notion이 연결되지 않았어요")).toBeVisible();
   });
 
-  test("지난 날짜를 최종 마감일로 고르면 안내가 보인다", async ({ page }) => {
+  test("최종 마감일 달력에서 지난 날짜는 고를 수 없고, 고른 날짜는 지울 수 있다", async ({ page }) => {
     await page.goto("/projects/new");
-    await page.getByLabel(/프로젝트 이름/).fill("마켓셰이프");
-    await page.getByLabel(/내 이름/).fill("하은");
-    await page.getByLabel(/최종 마감일/).fill("2020-01-01");
-    await page.getByRole("button", { name: "프로젝트 만들기" }).click();
-    await expect(page.getByText("최종 마감일은 오늘이거나 이후 날짜로 골라 주세요.")).toBeVisible();
-    await expect(page).toHaveURL("/projects/new");
+    await page.getByLabel(/최종 마감일/).click();
+    const cal = page.getByRole("dialog", { name: "날짜 고르기" });
+    await expect(cal.getByRole("button", { name: "이전 달" })).toBeDisabled();
+    const d = new Date(Date.now() - 86_400_000);
+    if (d.getMonth() === new Date().getMonth()) {
+      await expect(cal.getByRole("button", { name: new RegExp(`^${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 `) })).toBeDisabled();
+    }
+    await page.keyboard.press("Escape");
+    const t = new Date(Date.now() + 7 * 86_400_000);
+    const iso = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
+    await pickDate(page, /최종 마감일/, iso);
+    await expect(page.getByLabel(/최종 마감일/)).toContainText(iso.replace(/-/g, "."));
+    await page.getByLabel(/최종 마감일/).click();
+    await page.getByRole("button", { name: "지우기" }).click();
+    await expect(page.getByLabel(/최종 마감일/)).toContainText("정하지 않음");
   });
 });

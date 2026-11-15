@@ -139,6 +139,4 @@ export type Dashboard = {
   participation: Participation[];
   rounds: MeetingRound[];
   highlights: Highlight[];
-  /** 회의 기록 검색 예시 (예시 프로젝트만). 없으면 검색 칸이 "회의가 쌓이면" 안내를 보여 줌 */
-  sampleSearch?: { question: string; answer: string; linkLabel: string; href: string };
 };

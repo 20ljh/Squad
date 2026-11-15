@@ -44,9 +44,6 @@ export function ActionList({ items, members, canEdit }: { items: Action[]; membe
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="m-0 text-[14px] tabular-nums text-ink-soft" aria-live="polite">
-        {left ? `남은 할 일 ${left}건 · 완료 ${items.length - left}건` : "모두 끝냈어요"}
-      </p>
       <ul className="m-0 flex list-none flex-col divide-y divide-line rounded-lg border border-line bg-white p-0 px-4 md:px-5">
         {items.map((t) => {
           const m = t.memberId ? members[t.memberId] : undefined;
@@ -72,6 +69,10 @@ export function ActionList({ items, members, canEdit }: { items: Action[]; membe
           );
         })}
       </ul>
+      {/* 진행 상황은 체크리스트 아래에 */}
+      <p className="m-0 text-[14px] tabular-nums text-ink-soft" aria-live="polite">
+        {left ? `남은 업무 ${left}건 | 완료 ${items.length - left}건` : "모두 끝냈어요"}
+      </p>
       <p aria-live="polite" className="m-0 text-[13px] font-medium text-warn empty:hidden">
         {error}
       </p>

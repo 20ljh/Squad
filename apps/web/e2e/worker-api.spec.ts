@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
+import { pickTime } from "./pickers";
 
 // STT 워커 API 흐름을 GPU 없이 확인: 테스트가 워커 역할을 함
 // 할 일 가져가기 → 녹음 내려받기 → 받아쓴 문장 올리기(화면에 실시간) → 최종 결과 → "화자 확인" 단계
@@ -20,7 +21,7 @@ test("워커가 가져가 처리하면 회의 페이지가 실시간 줄 → 화
   await page.goto(`/p/${proj.id}`);
   await page.getByRole("button", { name: "회의 기록 추가" }).click();
   const d = page.getByRole("dialog");
-  await d.getByLabel("시작 시각").fill("13:50");
+  await pickTime(d, "시작 시각", "13:50");
   await d.getByLabel("방식").fill("대면");
   await d.getByRole("button", { name: "회의 페이지 만들기" }).click();
   await page.locator('input[type="file"]').setInputFiles({ name: "회의.wav", mimeType: "audio/wav", buffer: audio });

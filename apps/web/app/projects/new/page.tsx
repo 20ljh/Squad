@@ -44,7 +44,7 @@ export default async function ProjectNewPage() {
 
       <main className="mx-auto flex w-full max-w-page flex-col gap-8 px-5 pb-16 pt-8 sm:px-8 md:pt-12">
         <section className="flex animate-fade-up flex-col gap-2">
-          <h1 className="m-0 font-display text-[28px] font-bold leading-[1.3] tracking-[-.01em] md:text-[34px]">새 프로젝트 만들기</h1>
+          <h1 className="m-0 font-display text-[28px] font-semibold leading-[1.3] tracking-[-.01em] md:text-[34px]">새 프로젝트 만들기</h1>
           <p className="m-0 text-base leading-[1.6] text-ink-soft">기본 정보만 넣으면 바로 시작할 수 있어요. 나중에 설정에서 바꿀 수 있어요.</p>
         </section>
 
@@ -56,7 +56,7 @@ export default async function ProjectNewPage() {
           {/* 만든 다음 과정 + 보안 안내 (PC). 모바일은 폼 안에 보안 안내만 */}
           <aside className="hidden min-w-0 flex-[1_1_300px] flex-col gap-4 md:flex">
             <section aria-labelledby="after-title" className="flex flex-col gap-4 rounded-lg border border-ink-soft/30 bg-white p-6">
-              <h2 id="after-title" className="m-0 font-display text-lg font-bold">
+              <h2 id="after-title" className="m-0 font-display text-lg font-semibold">
                 만든 다음에는
               </h2>
               <StepList />
@@ -67,7 +67,7 @@ export default async function ProjectNewPage() {
 
         {/* 모바일: 맨 아래에 접고 펼치는 "만든 다음에는" */}
         <details className="group rounded-lg border border-ink-soft/30 bg-white md:hidden">
-          <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-5 text-[17px] font-bold [&::-webkit-details-marker]:hidden">
+          <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-5 text-[17px] font-semibold [&::-webkit-details-marker]:hidden">
             만든 다음에는
             <svg
               width="18"
@@ -75,7 +75,7 @@ export default async function ProjectNewPage() {
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="1.75"
+              strokeWidth="1.5"
               strokeLinecap="round"
               strokeLinejoin="round"
               aria-hidden="true"

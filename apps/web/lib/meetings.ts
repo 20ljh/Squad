@@ -106,7 +106,7 @@ export async function getMeeting(projectId: string, meetingId: string): Promise<
 
   return {
     id: m.id,
-    teamName: m.project.course ? `${m.project.name} · ${m.project.course}` : m.project.name,
+    teamName: m.project.course ? `${m.project.name} | ${m.project.course}` : m.project.name,
     title: m.title,
     shortTitle: m.shortTitle,
     date: toKstIso(m.startedAt),

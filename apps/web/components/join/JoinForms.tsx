@@ -11,7 +11,7 @@ import { projectPath } from "@/lib/paths";
 const inputClass =
   "h-12 w-full min-w-0 rounded-sm border border-ink-soft/50 bg-white px-3.5 text-base text-ink transition-colors duration-150 placeholder:text-ink-soft hover:border-ink-soft";
 const primary =
-  "min-h-12 rounded-sm bg-accent-strong px-6 text-base font-bold text-white transition-colors duration-150 hover:bg-accent-deep disabled:opacity-60";
+  "min-h-12 rounded-sm bg-accent-strong px-6 text-base font-semibold text-white transition-colors duration-150 hover:bg-accent-deep disabled:opacity-60";
 
 async function post(url: string, body: unknown): Promise<{ ok: boolean; data: Record<string, unknown> }> {
   try {

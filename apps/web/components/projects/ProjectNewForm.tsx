@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { projectPath } from "@/lib/paths";
 import { InviteShare } from "@/components/invite/InviteShare";
+import { DateField } from "@/components/ui/PickerField";
 
 // 기본 프로젝트 설정 폼 (/projects/new)
 // 입력 검사 → POST /api/projects 로 저장 → 초대 링크·코드 공유 화면 → 만든 프로젝트의 팀 대시보드
@@ -23,7 +24,7 @@ function todayIso(): string {
 
 function LockIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <rect x="4" y="11" width="16" height="10" rx="2" />
       <path d="M8 11V7a4 4 0 0 1 8 0v4" />
     </svg>
@@ -32,7 +33,7 @@ function LockIcon() {
 
 function XIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
       <path d="M6 6l12 12M18 6L6 18" />
     </svg>
   );
@@ -169,7 +170,7 @@ export function ProjectNewForm({ defaultLeader = "" }: { defaultLeader?: string 
     return (
       <section aria-labelledby="created-title" className="flex flex-col gap-6 rounded-lg border border-line bg-white p-5 sm:p-8">
         <div className="flex flex-col gap-2">
-          <h2 id="created-title" className="m-0 font-display text-[22px] font-bold">
+          <h2 id="created-title" className="m-0 font-display text-[22px] font-semibold">
             프로젝트를 만들었어요
           </h2>
           <p className="m-0 text-base leading-[1.6] text-ink-soft">팀원에게 초대 링크나 코드를 보내 주세요.</p>
@@ -178,7 +179,7 @@ export function ProjectNewForm({ defaultLeader = "" }: { defaultLeader?: string 
         <button
           type="button"
           onClick={() => router.push(projectPath(created.id))}
-          className="min-h-12 self-start rounded-sm bg-accent-strong px-6 text-base font-bold text-white transition-colors duration-150 hover:bg-accent-deep"
+          className="min-h-12 self-start rounded-sm bg-accent-strong px-6 text-base font-semibold text-white transition-colors duration-150 hover:bg-accent-deep"
         >
           팀 대시보드로 가기
         </button>
@@ -209,14 +210,14 @@ export function ProjectNewForm({ defaultLeader = "" }: { defaultLeader?: string 
         </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor="p-course" hint="선택">
-            과목·팀 이름
+            과목, 팀 이름
           </Label>
           <input
             id="p-course"
             type="text"
             autoComplete="off"
             maxLength={40}
-            placeholder="예: 캡스톤디자인 · 3조"
+            placeholder="예: 캡스톤디자인 3조"
             value={course}
             onChange={(e) => setCourse(e.target.value)}
             className={inputClass}
@@ -248,19 +249,21 @@ export function ProjectNewForm({ defaultLeader = "" }: { defaultLeader?: string 
           <Label htmlFor="p-deadline" hint="선택">
             최종 마감일
           </Label>
-          <input
+          {/* 달력에서 고름 (오늘부터 3년 안). 선택 칸이라 지울 수 있음 */}
+          <DateField
             id="p-deadline"
-            type="date"
-            min={todayIso()}
             value={deadline}
-            onChange={(e) => setDeadline(e.target.value)}
-            aria-invalid={errors.deadline ? true : undefined}
-            aria-describedby="p-deadline-help p-deadline-error"
-            className={inputClass}
+            onChange={setDeadline}
+            placeholder="정하지 않음"
+            min={todayIso()}
+            max={`${Number(todayIso().slice(0, 4)) + 3}-12-31`}
+            clearable
+            invalid={Boolean(errors.deadline)}
+            describedBy="p-deadline-help p-deadline-error"
           />
           <FieldError id="p-deadline-error" message={errors.deadline} />
           <p id="p-deadline-help" className="m-0 text-[13px] leading-[1.6] text-ink-soft">
-            최종 발표·제출일이에요. 팀 대시보드에 남은 날짜(D-day)로 보여 드려요.
+            최종 발표일이나 제출일이에요. 팀 대시보드에 남은 날짜(D-day)로 보여 드려요.
           </p>
         </div>
       </div>
@@ -332,7 +335,7 @@ export function ProjectNewForm({ defaultLeader = "" }: { defaultLeader?: string 
           <button
             type="submit"
             disabled={saving}
-            className="flex h-12 shrink-0 items-center justify-center whitespace-nowrap rounded-sm bg-accent-strong px-7 text-base font-bold text-white transition-colors duration-150 hover:bg-accent-deep disabled:opacity-60"
+            className="flex h-12 shrink-0 items-center justify-center whitespace-nowrap rounded-sm bg-accent-strong px-7 text-base font-semibold text-white transition-colors duration-150 hover:bg-accent-deep disabled:opacity-60"
           >
             {saving ? "만드는 중…" : "프로젝트 만들기"}
           </button>

@@ -40,7 +40,7 @@ export default async function LoginPage({ searchParams }: Props) {
       <main className="mx-auto flex w-full max-w-[480px] flex-col gap-6 px-5 pb-16 pt-12 sm:pt-20">
         <section className="flex animate-fade-up flex-col gap-6 rounded-lg border border-line bg-white p-6 sm:p-8">
           <div className="flex flex-col gap-2">
-            <h1 className="m-0 font-display text-[26px] font-bold leading-[1.3]">로그인</h1>
+            <h1 className="m-0 font-display text-[26px] font-semibold leading-[1.3]">로그인</h1>
             <p className="m-0 text-base leading-[1.6] text-ink-soft">
               {BRAND.name}는 구글 계정으로 로그인해요. 다른 기기에서도 같은 계정으로 들어오면 내 프로젝트가 그대로 보여요.
             </p>
@@ -62,7 +62,7 @@ export default async function LoginPage({ searchParams }: Props) {
             <p className="m-0 rounded-sm bg-surface-alt px-4 py-3 text-[15px] text-ink-soft">{ERRORS.config}</p>
           )}
           <p className="m-0 text-[13px] leading-[1.6] text-ink-soft">
-            구글에서는 이름·이메일·계정 ID만 받아요. 구글 비밀번호나 다른 정보는 받지 않아요.{" "}
+            구글에서는 이름, 이메일, 계정 ID만 받아요. 구글 비밀번호나 다른 정보는 받지 않아요.{" "}
             <a href="/privacy" className="text-accent-strong underline">
               개인정보 처리 안내
             </a>

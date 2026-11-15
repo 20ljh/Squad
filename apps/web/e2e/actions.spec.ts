@@ -47,11 +47,11 @@ test("할 일을 체크하고 의견을 하이라이트에 올리면 대시보�
   // 대시보드: 진행중 1건, 하이라이트 없음
   await page.goto(`/p/${projectId}`);
   await expect(page.getByText("1건").first()).toBeVisible();
-  await expect(page.getByText("아직 하이라이트가 없어요", { exact: false })).toBeVisible();
+  await expect(page.getByText("아직 정리된 주요 내용이 없어요", { exact: false })).toBeVisible();
 
   // 회의 결과: 할 일 칸 → 체크
   await page.goto(`/p/${projectId}/meetings/${meetingId}`);
-  await expect(page.getByRole("heading", { name: "할 일" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "업무" })).toBeVisible();
   const box = page.getByRole("checkbox", { name: /발표 자료 초안 만들기/ });
   await expect(box).not.toBeChecked();
   // 화면은 먼저 바뀌고 저장은 뒤따름 → 저장 응답까지 기다림
@@ -61,14 +61,14 @@ test("할 일을 체크하고 의견을 하이라이트에 올리면 대시보�
   // 의견 ☆ → 하이라이트
   await Promise.all([
     page.waitForResponse((r) => r.url().includes("/api/opinions/") && r.ok()),
-    page.getByRole("button", { name: "대시보드 하이라이트에 올리기" }).click(),
+    page.getByRole("button", { name: "대시보드 주요 내용에 올리기" }).click(),
   ]);
-  await expect(page.getByRole("button", { name: "하이라이트에서 내리기" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "주요 내용에서 내리기" })).toHaveAttribute("aria-pressed", "true");
 
   // 대시보드에 반영: 진행중 0건, 하이라이트에 인용구
   await page.goto(`/p/${projectId}`);
   await expect(page.getByText("“발표는 제가 맡을게요.”")).toBeVisible();
-  await expect(page.getByText("1차 회의 · 발표 역할")).toBeVisible();
+  await expect(page.getByText("1차 회의 | 발표 역할")).toBeVisible();
   // 할 일을 끝냈으니 다음 일정에서도 빠짐
   await expect(page.getByText("발표 자료 초안 만들기까지", { exact: false })).toHaveCount(0);
 
@@ -91,6 +91,43 @@ test("예시 회의는 할 일·☆을 바꿀 수 없다 (로그인 없이 보�
   const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
   const page = await ctx.newPage();
   await page.goto("/p/sample/meetings/m3");
-  await expect(page.getByRole("button", { name: "대시보드 하이라이트에 올리기" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "대시보드 주요 내용에 올리기" })).toHaveCount(0);
   await ctx.close();
+});
+
+test("팀장은 회의 기록 관리에서 회의를 삭제할 수 있고, 팀원이 아니면 삭제할 수 없다", async ({ page, browser }) => {
+  const created = await page.request.post("/api/projects", { data: { name: "e2e 회의 삭제", leader: "이주형", members: ["김치우"] } });
+  const { id: projectId } = (await created.json()) as { id: string };
+  loadEnv();
+  const db = new PrismaClient();
+  let meetingId: string;
+  try {
+    const m = await db.meeting.create({ data: { projectId, title: "1차 회의 결과", shortTitle: "1차 회의", startedAt: new Date(), mode: "대면", status: "done" } });
+    meetingId = m.id;
+  } finally {
+    await db.$disconnect();
+  }
+
+  // 팀원이 아니면 삭제 API 404
+  const b = await browser.newContext({ storageState: USER_B });
+  expect((await (await b.newPage()).request.delete(`/api/meetings/${meetingId}`)).status()).toBe(404);
+  await b.close();
+
+  await page.goto(`/p/${projectId}`);
+  await expect(page.getByRole("button", { name: "1차 회의 결과 삭제" })).toHaveCount(0);
+  await page.getByRole("button", { name: "회의 기록 관리" }).click();
+  await page.getByRole("button", { name: "1차 회의 결과 삭제" }).click();
+  const confirm = page.getByRole("dialog", { name: "정말 삭제할까요?" });
+  await expect(confirm.getByText("포함된 요약도 함께 삭제돼요.")).toBeVisible();
+  // 취소하면 그대로
+  await confirm.getByRole("button", { name: "취소" }).click();
+  await expect(page.getByText("1차 회의 결과")).toBeVisible();
+  await page.getByRole("button", { name: "1차 회의 결과 삭제" }).click();
+  await confirm.getByRole("button", { name: "회의 삭제" }).click();
+  await expect(page.getByText("아직 회의가 없어요", { exact: false })).toBeVisible();
+});
+
+test("예시 프로젝트에는 회의 기록 관리 버튼이 없다", async ({ page }) => {
+  await page.goto("/p/sample");
+  await expect(page.getByRole("button", { name: "회의 기록 관리" })).toHaveCount(0);
 });

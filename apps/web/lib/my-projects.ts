@@ -30,7 +30,7 @@ export async function getMyProjects(userId: string): Promise<MyProject[]> {
   const mine: MyProject[] = members.map((m) => ({
     id: m.project.id,
     name: m.project.name,
-    meta: [m.project.course, `회의 ${m.project._count.meetings}회`].filter(Boolean).join(" · "),
+    meta: [m.project.course, `회의 ${m.project._count.meetings}회`].filter(Boolean).join(" | "),
     status: m.role === "leader" ? "leader" : "member",
     href: projectPath(m.project.id),
   }));

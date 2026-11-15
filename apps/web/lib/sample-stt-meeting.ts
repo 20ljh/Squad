@@ -17,8 +17,8 @@ export const STT_TEST_MEETING_ID = "stt-test";
 
 export const sttTestMeeting: Meeting = {
   id: STT_TEST_MEETING_ID,
-  teamName: "받아쓰기·요약 시험 · 실제 팀 회의 녹음",
-  title: "발표 역할·일정 회의 결과",
+  teamName: "받아쓰기, 요약 시험 | 실제 팀 회의 녹음",
+  title: "발표 역할, 일정 회의 결과",
   shortTitle: "발표 역할 회의",
   date: "2026-05-07",
   timeRange: "약 6분",
@@ -53,8 +53,8 @@ export const sttTestMeeting: Meeting = {
     {
       id: "a3",
       order: 3,
-      title: "PPT 초안·일정",
-      shortTitle: "PPT 초안·일정",
+      title: "PPT 초안, 일정",
+      shortTitle: "PPT 초안, 일정",
       opinions: [
         { memberId: "s1", quote: "PPT 초안을 일단 제가 만들어 볼게요. 다음 주 목요일까지 드리는 거 괜찮을까요.", gist: "초안 5/14까지 공유" },
         { memberId: "s4", quote: "딱 축제 끝나고 그때부터요.", gist: "축제 끝난 뒤부터 가능" },
@@ -75,6 +75,6 @@ export const sttTestMeeting: Meeting = {
   schedules: [
     { id: "s1", date: "2026-05-10", label: "2차 발표 주제 생각해 오기", ownerLabel: "전원" },
     { id: "s2", date: "2026-05-14", label: "PPT 초안 공유", ownerLabel: "화자1" },
-    { id: "s3", date: null, dueText: "주말", label: "대본 수정·확정", ownerLabel: "전원" },
+    { id: "s3", date: null, dueText: "주말", label: "대본 수정, 확정", ownerLabel: "전원" },
   ],
 };

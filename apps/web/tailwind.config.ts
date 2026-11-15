@@ -1,33 +1,30 @@
 import type { Config } from "tailwindcss";
 
-// Squad Soft UI 디자인 토큰 — Design 캔버스 목업의 :root 값과 1:1로 맞춘 것
+// 디자인 토큰 — "회의 노트" 방향: 종이색 중성 램프 + 볼펜 파랑 강조 + 결정에 형광펜 표시
 const config: Config = {
   content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        ink: { DEFAULT: "#372F52", soft: "#726A94" },
-        line: "#ECE3FA",
-        surface: { DEFAULT: "#FFFFFF", alt: "#F4EFFC" },
-        accent: { DEFAULT: "#8B7CF6", strong: "#6C55E6", deep: "#5A45D6", soft: "#EFE9FE" },
-        warn: { DEFAULT: "#B23F66", soft: "#FCE9F0" },
+        ink: { DEFAULT: "#1F1B16", soft: "#5E554A" },
+        line: "#E7E1D6",
+        surface: { DEFAULT: "#FFFFFF", alt: "#F7F4EE" },
+        accent: { DEFAULT: "#4C6EF5", strong: "#2F4AC0", deep: "#233A99", soft: "#E9EDFB" },
+        warn: { DEFAULT: "#B3402F", soft: "#FBECE8" },
+        marker: "#FFE27A",
       },
       borderRadius: {
-        sm: "16px",
-        md: "20px",
-        lg: "22px",
-        xl: "28px",
+        sm: "10px",
+        md: "14px",
+        lg: "16px",
+        xl: "20px",
       },
       boxShadow: {
-        soft: "0 2px 8px rgba(120,100,190,.08), 0 20px 44px rgba(120,100,190,.16)",
-        glow: "0 10px 26px rgba(108,85,230,.35)",
-        "glow-lg": "0 14px 32px rgba(108,85,230,.42)",
-        panel: "0 24px 60px rgba(108,85,230,.28)",
+        soft: "0 1px 2px rgba(31,27,22,.06)",
       },
       backgroundImage: {
-        page: "linear-gradient(160deg, #F7F2FD 0%, #FCF0F6 45%, #F1F6FD 100%)",
-        panel: "linear-gradient(135deg, #9C8CF7 0%, #6FA6F2 100%)",
-        cta: "linear-gradient(135deg, #6C55E6 0%, #5A45D6 100%)",
+        // 형광펜 밑줄: 글자 아래쪽 절반에만 칠하는 표시 (색이 바뀌는 그라데이션이 아님)
+        marker: "linear-gradient(transparent 58%, #FFE27A 58%, #FFE27A 92%, transparent 92%)",
       },
       fontFamily: {
         // 제목·본문 모두 Wanted Sans로 통일 (font-display / font-body 이름은 그대로 유지)

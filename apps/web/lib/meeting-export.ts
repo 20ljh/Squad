@@ -66,7 +66,7 @@ export async function buildMeetingDoc(meeting: Meeting): Promise<ExportDoc> {
   const metaBlocks: ExportBlock[] = [
     { type: "p", lead: "일시 ", text: `${formatFullDate(meeting.date)} ${meeting.timeRange}` },
     { type: "p", lead: "방식 ", text: meeting.mode },
-    { type: "p", lead: "참석 ", text: `${attendees.length}/${teamSize}명 · ${attendees.join(", ")}` },
+    { type: "p", lead: "참석 ", text: `${attendees.length}/${teamSize}명 | ${attendees.join(", ")}` },
   ];
   const meta: ExportMeta = {
     start: extra ? kstDateTime(extra.startedAt) : `${meeting.date}T00:00:00+09:00`,
@@ -85,7 +85,7 @@ export async function buildMeetingDoc(meeting: Meeting): Promise<ExportDoc> {
       blocks.push({ type: "h3", text: `${a.order}. ${a.title}` });
       for (const o of a.opinions) blocks.push({ type: "bullet", lead: `${names[o.memberId] ?? "알 수 없음"}: `, text: o.quote });
       if (a.decision) {
-        const meta = [a.decision.ownerLabel && `담당 ${a.decision.ownerLabel}`, a.decision.dueLabel && `마감 ${a.decision.dueLabel}`].filter(Boolean).join(" · ");
+        const meta = [a.decision.ownerLabel && `담당 ${a.decision.ownerLabel}`, a.decision.dueLabel && `마감 ${a.decision.dueLabel}`].filter(Boolean).join(" | ");
         blocks.push({ type: "quote", lead: "결정 ", text: meta ? `${a.decision.text} (${meta})` : a.decision.text });
       }
     }
@@ -93,10 +93,10 @@ export async function buildMeetingDoc(meeting: Meeting): Promise<ExportDoc> {
 
   const actions = (extra?.agendaItems ?? []).flatMap((a) => a.actionItems);
   if (actions.length) {
-    blocks.push({ type: "h2", text: "할 일" });
+    blocks.push({ type: "h2", text: "업무" });
     for (const t of actions) {
       const due = t.dueDate ? dateLabel(toKstIso(t.dueDate)) : null; // 날짜는 한국 시간 기준
-      const meta = [t.member?.name, due && `${due}까지`].filter(Boolean).join(" · ");
+      const meta = [t.member?.name, due && `${due}까지`].filter(Boolean).join(" | ");
       blocks.push({ type: "todo", text: meta ? `${t.title} — ${meta}` : t.title, checked: t.done });
     }
   }

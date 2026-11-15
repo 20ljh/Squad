@@ -13,13 +13,12 @@ export function formatFullDate(iso: string): string {
   return `${date.getFullYear()}.${mm}.${dd} (${WEEKDAYS[date.getDay()]})`;
 }
 
-/** 일정 카드용 조각: { day: "03", month: "10월", weekday: "토" } */
+/** 일정 카드용 조각: { md: "10/3", weekday: "토요일" } */
 export function dateParts(iso: string) {
   const date = parseISODate(iso);
   return {
-    day: String(date.getDate()).padStart(2, "0"),
-    month: `${date.getMonth() + 1}월`,
-    weekday: WEEKDAYS[date.getDay()],
+    md: `${date.getMonth() + 1}/${date.getDate()}`,
+    weekday: `${WEEKDAYS[date.getDay()]}요일`,
   };
 }
 

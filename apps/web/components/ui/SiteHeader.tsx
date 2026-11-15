@@ -20,15 +20,15 @@ function NavIcon({ kind }: { kind: "grid" | "back" }) {
   if (kind === "back") {
     return (
       <svg width="13" height="13" viewBox="0 0 16 16" aria-hidden="true">
-        <path d="M10 3l-5 5 5 5" stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M10 3l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     );
   }
   return (
     <svg width="13" height="13" viewBox="0 0 16 16" aria-hidden="true">
-      <rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="none" stroke="currentColor" strokeWidth="1.4" />
-      <rect x="9" y="1.5" width="5.5" height="9" rx="1.2" fill="none" stroke="currentColor" strokeWidth="1.4" />
-      <rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="none" stroke="currentColor" strokeWidth="1.4" />
+      <rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <rect x="9" y="1.5" width="5.5" height="9" rx="1.2" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="none" stroke="currentColor" strokeWidth="1.5" />
     </svg>
   );
 }
@@ -40,12 +40,12 @@ export async function SiteHeader({ context, nav }: Props) {
       <div className="mx-auto flex max-w-page items-center gap-2.5 px-4 py-2.5 sm:px-8">
         <Link href="/" className="flex items-center gap-2.5 text-ink no-underline">
           <LogoMark />
-          <span className="font-display text-[15px] font-bold tracking-wide">{BRAND.name}</span>
+          <span className="font-display text-base font-semibold">{BRAND.name}</span>
         </Link>
         {context ? (
           <>
             <span className="mx-1 hidden h-4 w-px bg-line sm:block" aria-hidden="true" />
-            <span className="hidden font-display text-[11px] uppercase tracking-[.08em] text-ink-soft sm:block">{context}</span>
+            <span className="hidden text-[13px] text-ink-soft sm:block">{context}</span>
           </>
         ) : null}
         {nav ? (

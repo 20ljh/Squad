@@ -11,7 +11,7 @@ export async function PATCH(request: Request, { params }: Ctx) {
   if (typeof body.done !== "boolean") return NextResponse.json({ error: "done 값이 필요해요." }, { status: 400 });
 
   const item = await db.actionItem.findUnique({ where: { id: params.id }, select: { id: true, agendaItem: { select: { meeting: { select: { projectId: true } } } } } });
-  if (!item) return NextResponse.json({ error: "할 일을 찾을 수 없어요." }, { status: 404 });
+  if (!item) return NextResponse.json({ error: "업무를 찾을 수 없어요." }, { status: 404 });
   const auth = await requireProjectApi(item.agendaItem.meeting.projectId);
   if (!auth.ok) return auth.response;
 

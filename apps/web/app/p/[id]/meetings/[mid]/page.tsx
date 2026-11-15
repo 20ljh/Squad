@@ -71,7 +71,7 @@ export default async function MeetingResultPage({ params }: Params) {
           <div className="flex flex-wrap items-baseline justify-between gap-3">
             <div>
               <p className="mb-2 text-sm font-semibold text-accent-strong">{meeting.teamName}</p>
-              <h1 className="m-0 text-balance font-display text-[clamp(26px,4vw,36px)] font-bold tracking-[-.01em]">
+              <h1 className="m-0 text-balance font-display text-[clamp(26px,4vw,36px)] font-semibold tracking-[-.01em]">
                 {done ? meeting.title : meeting.shortTitle}
               </h1>
             </div>
@@ -83,14 +83,14 @@ export default async function MeetingResultPage({ params }: Params) {
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="2"
+                  strokeWidth="1.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   aria-hidden="true"
                 >
                   <path d="M5 12.5l4.5 4.5L19 7.5" />
                 </svg>
-                STT 전사 완료 · {meeting.transcriptDuration}
+                STT 전사 완료 | {meeting.transcriptDuration}
               </p>
             ) : (
               <p
@@ -144,41 +144,35 @@ export default async function MeetingResultPage({ params }: Params) {
 
                 {meeting.actions && meeting.actions.length > 0 ? (
                   <section id="actions" aria-labelledby="actions-title" className="flex scroll-mt-20 flex-col gap-4">
-                    <SectionHeading id="actions-title" title="할 일" description={canEdit ? "끝낸 일은 체크해 주세요. 대시보드에 바로 반영돼요." : undefined} />
+                    <SectionHeading id="actions-title" title="업무" description={canEdit ? "끝낸 일은 체크해 주세요. 대시보드에 바로 반영돼요." : undefined} />
                     <ActionList items={meeting.actions} members={byId} canEdit={canEdit} />
                   </section>
                 ) : null}
 
                 <section id="mindmap" aria-labelledby="mindmap-title" className="flex scroll-mt-20 flex-col gap-4">
                   <SectionHeading id="mindmap-title" title="논의 흐름 마인드맵" />
-                  <div className="flex flex-col gap-4 rounded-lg border border-line bg-white px-5 py-6 md:px-6">
+                  <div className="flex flex-col gap-4 rounded-lg border border-line bg-white px-5 pb-4 pt-6 md:px-6">
                     <figure className="m-0">
-                      <p className="mb-2 text-[13px] text-ink-soft sm:hidden">옆으로 밀어서 전체 흐름을 볼 수 있어요</p>
-                      <div className="overflow-x-auto">
-                        <MindMap
-                          meetingLabel={meeting.shortTitle}
-                          meetingSub={`${mm}/${dd} · ${attendees.length}인 참석`}
-                          agenda={meeting.agenda}
-                          members={byId}
-                        />
-                      </div>
-                      <figcaption className="mt-3 text-[13px] text-ink-soft">
-                        화살표는 팀원 의견이 결정으로 모이는 흐름을, 카드 왼쪽 색 막대는 발언한 팀원을 나타냅니다.
-                      </figcaption>
+                      <MindMap
+                        meetingLabel={meeting.shortTitle}
+                        meetingSub={`${mm}/${dd} | ${attendees.length}인 참석`}
+                        agenda={meeting.agenda}
+                        members={byId}
+                        legend={<MemberLegend members={meeting.members} />}
+                      />
                     </figure>
-                    <MemberLegend members={meeting.members} />
                   </div>
                 </section>
 
                 <section id="schedule" aria-labelledby="schedule-title" className="flex scroll-mt-20 flex-col gap-4">
                   <SectionHeading id="schedule-title" title="회의 중 언급된 일정" />
-                  <ScheduleList items={meeting.schedules} baseDate={meeting.date} />
+                  <ScheduleList items={meeting.schedules} baseDate={meeting.date} canEdit={canEdit} />
                 </section>
 
                 <ExportBar
                   meetingId={meeting.id}
                   notion={notion}
-                  summary={`안건 ${meeting.agenda.length}건 · 결정사항 ${decisionCount}건 · 일정 ${meeting.schedules.length}건이 함께 정리돼요.`}
+                  summary={`안건 ${meeting.agenda.length}건, 결정사항 ${decisionCount}건, 일정 ${meeting.schedules.length}건이 함께 정리돼요.`}
                 />
               </>
             }

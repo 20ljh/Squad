@@ -46,7 +46,7 @@ export function JoinRequestList({ items }: { items: JoinRequestItem[] }) {
             <div className="flex min-w-0 flex-col gap-1">
               <p className="m-0 text-base font-semibold">&ldquo;{r.message}&rdquo;</p>
               <p className="m-0 truncate text-[13px] text-ink-soft">
-                {r.userName} · {r.userEmail} · {timeAgo(r.createdAt)}
+                {r.userName} | {r.userEmail} | {timeAgo(r.createdAt)}
               </p>
             </div>
             <div className="flex shrink-0 gap-2">
@@ -62,7 +62,7 @@ export function JoinRequestList({ items }: { items: JoinRequestItem[] }) {
                 type="button"
                 disabled={busy !== null}
                 onClick={() => decide(r.id, "approve")}
-                className="min-h-11 rounded-sm bg-accent-strong px-4 text-[14px] font-bold text-white transition-colors duration-150 hover:bg-accent-deep disabled:opacity-60"
+                className="min-h-11 rounded-sm bg-accent-strong px-4 text-[14px] font-semibold text-white transition-colors duration-150 hover:bg-accent-deep disabled:opacity-60"
               >
                 {busy === r.id ? "처리 중…" : "수락"}
               </button>

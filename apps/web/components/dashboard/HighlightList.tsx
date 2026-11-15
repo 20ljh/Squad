@@ -5,7 +5,7 @@ export function HighlightList({ items }: { items: Highlight[] }) {
   if (items.length === 0) {
     return (
       <p className="m-0 rounded-lg border border-line bg-white px-5 py-6 text-center text-[15px] text-ink-soft">
-        아직 하이라이트가 없어요. 회의 결과의 의견에서 ☆를 누르면 여기에 모여요.
+        아직 정리된 주요 내용이 없어요. 회의 결과의 의견에서 ☆를 누르면 여기에 모여요.
       </p>
     );
   }

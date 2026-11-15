@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { Meeting } from "@/lib/types";
 import { SpeakerMapping } from "./SpeakerMapping";
+import { showToast } from "@/components/ui/Toaster";
 
 // 회의 페이지의 처리 단계 (결과가 나오기 전)
 // draft·failed → 녹음 올리기 / transcribing·mapping·summarizing → 진행 상황 (몇 초마다 새로 읽음)
@@ -12,7 +13,7 @@ type Status = "draft" | "transcribing" | "mapping" | "summarizing" | "failed";
 
 const STEPS = [
   { key: "upload", label: "녹음 올리기" },
-  { key: "transcribing", label: "받아쓰기·화자 나누기" },
+  { key: "transcribing", label: "받아쓰기, 화자 나누기" },
   { key: "mapping", label: "화자 확인" },
   { key: "summarizing", label: "요약" },
 ] as const;
@@ -68,6 +69,8 @@ function UploadPanel({ meetingId, speakerCount, failed, failReason }: { meetingI
     if (!f) return;
     setFile(f);
     setMessage(null);
+    // 파일을 고른 순간 바로 알림 (올리려면 아래 버튼을 눌러야 한다는 것까지)
+    showToast("녹음 파일이 업로드되었어요.");
   }
 
   function upload() {
@@ -126,14 +129,14 @@ function UploadPanel({ meetingId, speakerCount, failed, failReason }: { meetingI
           dragging ? "border-accent-strong bg-accent-soft" : "border-ink-soft/40 bg-surface-alt"
         }`}
       >
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="text-accent-strong" aria-hidden="true">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-accent-strong" aria-hidden="true">
           <rect x="9" y="2" width="6" height="12" rx="3" />
           <path d="M5 10v1a7 7 0 0 0 14 0v-1M12 18v4M8 22h8" />
         </svg>
         <p className="m-0 text-[15px] font-semibold">
           {file ? `${file.name} (${sizeMb}MB)` : "회의 녹음 파일을 여기에 끌어다 놓거나 골라 주세요"}
         </p>
-        <p className="m-0 text-[13px] text-ink-soft">m4a, mp3, wav 등 · 300MB까지</p>
+        <p className="m-0 text-[13px] text-ink-soft">m4a, mp3, wav 등 | 300MB까지</p>
         <label className="inline-flex min-h-11 cursor-pointer items-center rounded-sm border border-ink-soft/30 bg-white px-5 text-[15px] font-semibold text-ink transition-colors duration-150 hover:border-ink-soft">
           {file ? "다른 파일 고르기" : "파일 고르기"}
           <input ref={inputRef} type="file" accept={ACCEPT} className="sr-only" onChange={(e) => pick(e.target.files?.[0])} disabled={uploading} />
@@ -163,7 +166,7 @@ function UploadPanel({ meetingId, speakerCount, failed, failReason }: { meetingI
         type="button"
         onClick={upload}
         disabled={uploading}
-        className="h-12 self-end rounded-sm bg-accent-strong px-7 text-base font-bold text-white transition-colors duration-150 hover:bg-accent-deep disabled:opacity-60"
+        className="h-12 self-end rounded-sm bg-accent-strong px-7 text-base font-semibold text-white transition-colors duration-150 hover:bg-accent-deep disabled:opacity-60"
       >
         {uploading ? "올리는 중…" : "녹음 올리고 정리 시작"}
       </button>
@@ -176,11 +179,11 @@ type Processing = NonNullable<Meeting["processing"]>;
 const WAITING: Record<"mapping" | "summarizing", { title: string; body: string }> = {
   mapping: {
     title: "누가 말했는지 확인해 주세요",
-    body: "받아쓰기가 끝났어요. 화자1·화자2…가 어떤 팀원인지 고르면 요약을 시작해요.",
+    body: "받아쓰기가 끝났어요. 화자1, 화자2…가 어떤 팀원인지 고르면 요약을 시작해요.",
   },
   summarizing: {
     title: "회의 내용을 정리하고 있어요",
-    body: "안건·의견·결정·일정을 뽑고 있어요. 보통 1분 안에 끝나요. 이 페이지는 끝나면 저절로 바뀌어요.",
+    body: "안건, 의견, 결정, 일정을 뽑고 있어요. 보통 1분 안에 끝나요. 이 페이지는 끝나면 저절로 바뀌어요.",
   },
 };
 
@@ -249,7 +252,7 @@ function CancelTranscribing({ meetingId }: { meetingId: string }) {
         className="m-auto w-[calc(100%-32px)] max-w-[360px] rounded-lg border border-line bg-white p-0 text-ink shadow-soft backdrop:bg-ink/40 backdrop:backdrop-blur-sm"
       >
         <div className="flex flex-col gap-2 px-6 pb-5 pt-7 text-center">
-          <h2 id="cancel-title" className="m-0 font-display text-lg font-bold">
+          <h2 id="cancel-title" className="m-0 font-display text-lg font-semibold">
             받아쓰기를 멈출까요?
           </h2>
           <p id="cancel-desc" className="m-0 text-[15px] leading-[1.6] text-ink-soft">
@@ -273,7 +276,7 @@ function CancelTranscribing({ meetingId }: { meetingId: string }) {
             type="button"
             onClick={cancel}
             disabled={busy}
-            className="h-12 rounded-sm bg-warn text-[15px] font-bold text-white transition-opacity duration-150 hover:opacity-90 disabled:opacity-60"
+            className="h-12 rounded-sm bg-warn text-[15px] font-semibold text-white transition-opacity duration-150 hover:opacity-90 disabled:opacity-60"
           >
             {busy ? "멈추는 중…" : "멈추고 녹음 지우기"}
           </button>
@@ -299,7 +302,7 @@ function TranscribingPanel({ meetingId, p }: { meetingId: string; p: Processing 
   return (
     <div className="flex flex-col gap-5 rounded-lg border border-line bg-white p-5 md:p-6">
       <div className="flex flex-wrap items-center gap-3 rounded-sm bg-surface-alt px-4 py-3">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-accent-strong" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-accent-strong" aria-hidden="true">
           <path d="M9 18V5l12-2v13" />
           <circle cx="6" cy="18" r="3" />
           <circle cx="18" cy="16" r="3" />
@@ -310,7 +313,7 @@ function TranscribingPanel({ meetingId, p }: { meetingId: string; p: Processing 
             {p.audioName ?? "올린 녹음"}
           </p>
           <p className="m-0 text-[13px] tabular-nums text-ink-soft">
-            {[sizeLabel(p.audioSize), p.durationSec ? `길이 ${clock(p.durationSec)}` : null].filter(Boolean).join(" · ")}
+            {[sizeLabel(p.audioSize), p.durationSec ? `길이 ${clock(p.durationSec)}` : null].filter(Boolean).join(" | ")}
           </p>
         </div>
         <CancelTranscribing meetingId={meetingId} />
@@ -319,7 +322,7 @@ function TranscribingPanel({ meetingId, p }: { meetingId: string; p: Processing 
       <div className="flex flex-col gap-2" aria-live="polite">
         <div className="flex items-center gap-3">
           <span className="h-5 w-5 shrink-0 animate-spin rounded-full border-[3px] border-accent-soft border-t-accent-strong" aria-hidden="true" />
-          <p className="m-0 font-display text-[17px] font-bold">
+          <p className="m-0 font-display text-[17px] font-semibold">
             {!p.started ? "받아쓰기를 기다리고 있어요" : last ? "녹음을 받아쓰고 있어요" : "녹음을 받아쓰기 시작했어요"}
           </p>
           {p.started && last && p.durationSec ? (
@@ -361,7 +364,7 @@ function WaitingPanel({ status }: { status: "mapping" | "summarizing" }) {
   return (
     <div className="flex flex-col items-center gap-3 rounded-lg border border-line bg-white px-6 py-10 text-center" aria-live="polite">
       {status !== "mapping" ? <span className="h-8 w-8 animate-spin rounded-full border-[3px] border-accent-soft border-t-accent-strong" aria-hidden="true" /> : null}
-      <p className="m-0 font-display text-lg font-bold">{w.title}</p>
+      <p className="m-0 font-display text-lg font-semibold">{w.title}</p>
       <p className="m-0 max-w-[520px] text-[15px] leading-[1.6] text-ink-soft">{w.body}</p>
     </div>
   );
@@ -394,7 +397,7 @@ export function MeetingProgress({
 }) {
   return (
     <section aria-labelledby="progress-title" className="flex flex-col gap-4">
-      <h2 id="progress-title" className="m-0 font-display text-[22px] font-bold">
+      <h2 id="progress-title" className="m-0 font-display text-[22px] font-semibold">
         {status === "draft" || status === "failed" ? "회의 녹음 올리기" : status === "mapping" ? "누가 말했는지 확인해 주세요" : "정리하는 중"}
       </h2>
       <Steps status={status} />
