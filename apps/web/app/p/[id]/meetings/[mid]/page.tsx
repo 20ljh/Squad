@@ -18,6 +18,7 @@ import { STATUS_LABEL } from "@/lib/projects";
 import { MeetingProgress } from "@/components/meeting/MeetingProgress";
 import { MeetingTabs } from "@/components/meeting/MeetingTabs";
 import { TranscriptPlayer } from "@/components/meeting/TranscriptPlayer";
+import { ActionList } from "@/components/meeting/ActionList";
 
 // Next 14: params는 일반 객체입니다(Next 15부터는 Promise).
 type Params = { params: { id: string; mid: string } };
@@ -39,7 +40,9 @@ function MetaItem({ label, children }: { label: string; children: React.ReactNod
 
 export default async function MeetingResultPage({ params }: Params) {
   // 예시 프로젝트는 누구나, 그 밖에는 로그인한 팀원만
-  await requireProjectPage(params.id, meetingPath(params.id, params.mid));
+  const access = await requireProjectPage(params.id, meetingPath(params.id, params.mid));
+  // 팀원이면 할 일 체크·하이라이트 ☆를 바꿀 수 있음 (예시 프로젝트는 보기만)
+  const canEdit = access !== null;
   const meeting = await getMeeting(params.id, params.mid);
   if (!meeting) notFound();
 
@@ -135,9 +138,16 @@ export default async function MeetingResultPage({ params }: Params) {
                 <section id="summary" aria-labelledby="summary-title" className="flex scroll-mt-20 flex-col gap-4">
                   <SectionHeading id="summary-title" title="안건별 논의와 결정" />
                   {meeting.agenda.map((item) => (
-                    <AgendaCard key={item.id} item={item} members={byId} />
+                    <AgendaCard key={item.id} item={item} members={byId} canPin={canEdit} />
                   ))}
                 </section>
+
+                {meeting.actions && meeting.actions.length > 0 ? (
+                  <section id="actions" aria-labelledby="actions-title" className="flex scroll-mt-20 flex-col gap-4">
+                    <SectionHeading id="actions-title" title="할 일" description={canEdit ? "끝낸 일은 체크해 주세요. 대시보드에 바로 반영돼요." : undefined} />
+                    <ActionList items={meeting.actions} members={byId} canEdit={canEdit} />
+                  </section>
+                ) : null}
 
                 <section id="mindmap" aria-labelledby="mindmap-title" className="flex scroll-mt-20 flex-col gap-4">
                   <SectionHeading id="mindmap-title" title="논의 흐름 마인드맵" />

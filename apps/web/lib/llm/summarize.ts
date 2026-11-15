@@ -29,6 +29,7 @@ const SYSTEM = `너는 대학 조별과제 팀의 회의를 정리하는 도우�
 - 안건은 회의에서 실제로 다룬 주제 단위로 나눈다(보통 2~5개).
 - opinions: 안건마다 사람별 핵심 의견. speaker는 원문에 나온 이름을 그대로 쓴다.
   quote는 원문 말투를 살려 오류만 고친 한두 문장, gist는 15자 이내 요지.
+  highlight: 회의 전체에서 방향을 정했거나 가장 인상적인 발언 1~2개만 true, 나머지는 false.
 - decision: 그 안건에서 합의된 결론. 합의가 없으면 null. short는 14자 이내.
   owner는 원문에 나온 이름, "전원", 또는 정해지지 않았으면 null.
 - 마감·일정의 날짜(dueDate, date)는 회의 날짜(meetingDate)를 기준으로 하루로 정해질 때만 YYYY-MM-DD로 쓴다.
@@ -63,8 +64,8 @@ const SCHEMA = {
             items: {
               type: "object",
               additionalProperties: false,
-              required: ["speaker", "quote", "gist"],
-              properties: { speaker: { type: "string" }, quote: { type: "string" }, gist: { type: "string" } },
+              required: ["speaker", "quote", "gist", "highlight"],
+              properties: { speaker: { type: "string" }, quote: { type: "string" }, gist: { type: "string" }, highlight: { type: "boolean" } },
             },
           },
           decision: {
@@ -108,7 +109,7 @@ type Result = {
   agenda: {
     title: string;
     shortTitle: string;
-    opinions: { speaker: string; quote: string; gist: string }[];
+    opinions: { speaker: string; quote: string; gist: string; highlight?: boolean }[];
     decision: ({ text: string; short: string; owner: string | null } & Due) | null;
   }[];
   actionItems: ({ title: string; owner: string | null } & Due)[];
@@ -232,6 +233,8 @@ export async function saveSummary(meetingId: string, text: string): Promise<"sav
       if (still.count === 0) return;
       await tx.agendaItem.deleteMany({ where: { meetingId } });
       await tx.scheduleItem.deleteMany({ where: { meetingId } });
+      // 모델이 고른 핵심 발언은 하이라이트로 (회의마다 최대 2개, 팀원이 ☆로 바꿀 수 있음)
+      let highlightsLeft = 2;
       for (const [i, a] of result.agenda.entries()) {
         const d = a.decision;
         const created = await tx.agendaItem.create({
@@ -253,6 +256,7 @@ export async function saveSummary(meetingId: string, text: string): Promise<"sav
                 speakerLabelId: labelByName[o.speaker] ?? null,
                 quote: o.quote.trim(),
                 gist: cut(o.gist, LIMIT.gist),
+                pinned: o.highlight === true && highlightsLeft-- > 0,
               })),
             },
           },

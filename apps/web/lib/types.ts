@@ -11,6 +11,10 @@ export type Member = {
 };
 
 export type Opinion = {
+  /** DB 의견 id (예시 데이터에는 없음) — 하이라이트 ☆ 표시용 */
+  id?: string;
+  /** 대시보드 하이라이트에 올린 의견 */
+  pinned?: boolean;
   memberId: string;
   /** 원문 인용 — 안건 카드에 표시 */
   quote: string;
@@ -60,6 +64,8 @@ export type Meeting = {
   attendeeIds: string[];
   agenda: AgendaItem[];
   schedules: ScheduleItem[];
+  /** 회의에서 정한 할 일 (DB 회의만). 팀원이 완료로 체크하면 대시보드 숫자가 바뀜 */
+  actions?: { id: string; title: string; memberId: string | null; ownerName: string | null; due: string | null; done: boolean }[];
   /** 처리 상태. 없으면 정리 완료(예시 데이터) */
   status?: "draft" | "transcribing" | "mapping" | "summarizing" | "done" | "failed";
   /** 참석자 수 = 화자 분리에 쓸 화자 수 */

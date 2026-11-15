@@ -1,12 +1,15 @@
 import type { AgendaItem, Member } from "@/lib/types";
 import { Avatar } from "@/components/ui/Avatar";
+import { PinButton } from "./PinButton";
 
 type Props = {
   item: AgendaItem;
   members: Record<string, Member>;
+  /** 팀원이면 의견마다 ☆(하이라이트 올리기)를 누를 수 있음 */
+  canPin?: boolean;
 };
 
-export function AgendaCard({ item, members }: Props) {
+export function AgendaCard({ item, members, canPin = false }: Props) {
   return (
     <article className="flex flex-col gap-4 rounded-lg border border-line bg-white p-5 md:p-6">
       <div className="flex items-center gap-3">
@@ -21,12 +24,13 @@ export function AgendaCard({ item, members }: Props) {
           return (
             <li key={i} className="flex min-w-[240px] flex-[1_1_260px] gap-2.5 rounded-sm bg-surface-alt p-3">
               <Avatar member={m} size={28} />
-              <div>
+              <div className="min-w-0 flex-1">
                 <p className="m-0 mb-0.5 text-[13px] font-bold">
                   {m.name} <span className="font-medium text-ink-soft">· {m.role}</span>
                 </p>
                 <p className="m-0 text-sm leading-normal text-ink-soft">“{op.quote}”</p>
               </div>
+              {op.id ? <PinButton opinionId={op.id} pinned={Boolean(op.pinned)} canEdit={canPin} /> : null}
             </li>
           );
         })}

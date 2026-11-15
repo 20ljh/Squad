@@ -11,7 +11,7 @@ export const AUTH_DIR = path.join(__dirname, "../.e2e-auth");
 export const USER_A = path.join(AUTH_DIR, "a.json");
 export const USER_B = path.join(AUTH_DIR, "b.json");
 
-function loadEnv() {
+export function loadEnv() {
   if (process.env.DATABASE_URL) return;
   for (const line of readFileSync(path.join(__dirname, "../.env"), "utf8").split(/\r?\n/)) {
     const m = line.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/);

@@ -73,7 +73,7 @@ export async function getMeeting(projectId: string, meetingId: string): Promise<
       project: { include: { members: { orderBy: { order: "asc" } } } },
       attendances: true,
       speakerLabels: { orderBy: { label: "asc" } },
-      agendaItems: { orderBy: { order: "asc" }, include: { opinions: { orderBy: { order: "asc" } } } },
+      agendaItems: { orderBy: { order: "asc" }, include: { opinions: { orderBy: { order: "asc" } }, actionItems: { orderBy: { id: "asc" } } } },
       schedules: { orderBy: { order: "asc" } },
       segments: { orderBy: { startSec: "asc" }, select: { startSec: true, endSec: true, text: true, speakerLabelId: true } },
     },
@@ -147,6 +147,8 @@ export async function getMeeting(projectId: string, meetingId: string): Promise<
       title: a.title,
       shortTitle: a.shortTitle,
       opinions: a.opinions.map((o) => ({
+        id: o.id,
+        pinned: o.pinned,
         memberId: o.memberId ?? (o.speakerLabelId ? labelToMember[o.speakerLabelId] : "") ?? "",
         quote: o.quote,
         gist: o.gist,
@@ -160,6 +162,16 @@ export async function getMeeting(projectId: string, meetingId: string): Promise<
           }
         : null,
     })),
+    actions: m.agendaItems.flatMap((a) =>
+      a.actionItems.map((t) => ({
+        id: t.id,
+        title: t.title,
+        memberId: t.memberId,
+        ownerName: (t.memberId && nameById[t.memberId]) || null,
+        due: t.dueDate ? toKstIso(t.dueDate) : null,
+        done: t.done,
+      })),
+    ),
     schedules: m.schedules.map((s) => ({
       id: s.id,
       date: s.dueDate ? toKstIso(s.dueDate) : null,
